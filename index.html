@@ -3,16 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="refresh" content="900">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="BellFallsWaterWeather">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="description" content="Winter road weather for Kilmar, Grenville-sur-la-Rouge: road call, hourly forecast, radar links.">
+<meta name="description" content="Winter road weather for Kilmar, Grenville-sur-la-Rouge: road call, 24-hour rain and snow periods, live radar, hourly forecast.">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px;font-family:system-ui,-apple-system,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<script>
+/* Reload for fresh forecast: every 15 min, but never while someone is using the page */
+(function(){var t0=Date.now(),touch=Date.now();
+["pointerdown","wheel","keydown","touchstart"].forEach(function(e){addEventListener(e,function(){touch=Date.now()},{passive:true})});
+function due(){return Date.now()-t0>15*60e3}
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&due())location.reload()});
+setInterval(function(){if(due()&&Date.now()-touch>5*60e3)location.reload()},60e3);})();
+</script>
 <title>BellFallsWaterWeather</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 /* Layout: one narrow column built for a phone in a truck cab — road call first, then now, hourly strip, radar, outlook */
 :root{
@@ -125,6 +134,39 @@ header .sub{color:var(--muted);font-size:13px}
 .links a:hover,.links a:focus-visible{border-color:var(--amber);outline:none}
 @media (max-width:520px){.links{grid-template-columns:1fr}}
 
+/* Next 24 h periods */
+.summary{margin:0;font-size:16px;font-weight:500;max-width:65ch}
+.strip-wrap{display:flex;flex-direction:column;gap:4px}
+.strip{display:grid;grid-template-columns:repeat(24,1fr);gap:2px;height:34px}
+.strip span{border-radius:3px;background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.strip-ticks{display:grid;grid-template-columns:repeat(8,1fr);font-size:11px;color:var(--muted)}
+.periods{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.periods li{display:grid;grid-template-columns:6px 1fr;gap:12px;padding:12px 14px 12px 0;border-top:1px solid var(--line)}
+.periods li:first-child{border-top:0}
+.periods .bar{border-radius:0 3px 3px 0}
+.periods .pt{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.periods .pn{font-family:var(--f-display);font-size:20px;font-weight:700}
+.periods .pw{font-weight:600;font-size:14px}
+.periods .pd{font-size:14px;color:var(--muted);margin-top:2px}
+.periods .pd b{color:var(--ink);font-weight:600}
+
+/* Radar map */
+.tabs{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.tab{flex:0 0 auto;font:600 14px var(--f-body);padding:9px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tab:focus-visible{outline:3px solid color-mix(in srgb,var(--amber) 60%,transparent);outline-offset:2px}
+.mapbox{position:relative;height:420px;max-height:62vh;min-height:300px;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--panel)}
+#map,#wframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.mapmsg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;text-align:center;color:var(--muted);background:var(--panel)}
+.mapmsg a{font-weight:600;color:var(--ink)}
+.player{display:flex;align-items:center;gap:10px}
+.player[hidden]{display:none!important}
+.pbtn{flex:0 0 auto;width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:16px;cursor:pointer}
+.pbtn:focus-visible{outline:3px solid color-mix(in srgb,var(--amber) 60%,transparent)}
+#scrub{flex:1;min-width:0;accent-color:var(--amber)}
+.ptime{flex:0 0 auto;min-width:84px;text-align:right;font-weight:600}
+.leaflet-container{background:var(--panel);font-family:var(--f-body)}
+
 .empty{padding:28px 16px;text-align:center;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:12px}
 footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -154,6 +196,38 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
     </div>
   </section>
 
+  <section class="sec" id="next24">
+    <div class="sec-head"><h2>Next 24 hours · rain &amp; snow periods</h2></div>
+    <p class="summary" id="p-sum">The 24-hour breakdown appears once the forecast loads.</p>
+    <div class="strip-wrap">
+      <div class="strip" id="p-strip"></div>
+      <div class="strip-ticks" id="p-ticks"></div>
+    </div>
+    <ol class="periods" id="p-list"></ol>
+  </section>
+
+  <section class="sec" id="radar">
+    <div class="sec-head"><h2>Radar</h2><span class="note" id="rad-note"></span></div>
+    <div class="tabs" role="tablist" aria-label="Radar views">
+      <button class="tab" role="tab" aria-selected="true" data-view="loop" id="tab-loop">Radar · last 2 h</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="rain" id="tab-rain">Forecast · next days</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="ptype" id="tab-ptype">Rain / snow / ice</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="snowAccu" id="tab-snow">Snow totals</button>
+    </div>
+    <div class="mapbox">
+      <div id="map" aria-label="Radar map centred on Kilmar"></div>
+      <iframe id="wframe" title="Forecast precipitation map" hidden loading="lazy"></iframe>
+      <div class="mapmsg" id="mapmsg" hidden></div>
+    </div>
+    <div class="player" id="player">
+      <button class="pbtn" id="play" aria-label="Pause">❚❚</button>
+      <input type="range" id="scrub" min="0" max="0" value="0" aria-label="Radar frame">
+      <span class="ptime num" id="ptime">—</span>
+      <button class="pbtn" id="recentre" aria-label="Recentre on Kilmar">◎</button>
+    </div>
+    <p class="note" id="rad-help">Pinch to zoom. Blue shades are rain, pink and purple are snow. The dot is Kilmar.</p>
+  </section>
+
   <section class="sec">
     <h2>Conditions now</h2>
     <div class="now" id="now"><div class="empty" style="grid-column:1/-1">Current conditions appear here once the forecast loads.</div></div>
@@ -168,7 +242,7 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
   </section>
 
   <section class="sec">
-    <div class="sec-head"><h2>Radar &amp; future radar</h2></div>
+    <div class="sec-head"><h2>More radar &amp; maps</h2></div>
     <div class="radar">
       <a class="rbtn wide" href="https://zoom.earth/maps/precipitation/#view=45.770,-74.615,8z" target="_blank" rel="noopener">
         <span class="tag">Past + up to 7 days ahead</span>
@@ -206,7 +280,7 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
         <span class="x">Ottawa-area radar. Storms reaching Grenville usually show here first.</span>
       </a>
     </div>
-    <p class="note">Maps open in your browser. This page can't embed other sites, so these links are set to open centred on Grenville.</p>
+    <p class="note">These open full screen in your browser, centred on Kilmar.</p>
   </section>
 
   <section class="sec">
@@ -322,6 +396,9 @@ function render(d){
   $("c-range").textContent=`${Math.round(lo)}° / ${Math.round(hi)}°`;
   $("c-wind").textContent=wmax+" km/h";
 
+  // next 24 h periods
+  try{ periods(n24); }catch(e){ console.error(e); }
+
   // now
   const c=H[0]; const v=kmh(c.wind||0); const wc=windChill(c.temp,v);
   $("now").innerHTML=`<div class="t num">${Math.round(c.temp)}°</div>
@@ -380,6 +457,74 @@ function render(d){
   $("days").innerHTML=rows||'<div class="empty" style="border:0">No outlook data yet.</div>';
 }
 
+const fmtT=new Intl.DateTimeFormat("en-CA",{timeZone:TZ,hour:"numeric",hour12:true});
+const fmtWD=new Intl.DateTimeFormat("en-CA",{timeZone:TZ,weekday:"long"});
+function when(t){
+  const d=new Date(t), today=fmtDay.format(new Date()), dk=fmtDay.format(d);
+  const tm=fmtT.format(d).replace(/\s/g," ");
+  if(dk===today) return tm;
+  const tom=fmtDay.format(new Date(Date.now()+864e5));
+  return (dk===tom?"tomorrow ":fmtWD.format(d)+" ")+tm;
+}
+function partOfDay(t){const h=+fmtH.format(new Date(t));return h<6?"overnight":h<12?"this morning":h<17?"this afternoon":"this evening";}
+const PCOL={rain:"var(--rain)",snow:"var(--snow)",mix:"var(--ice)",frz:"var(--ice)"};
+function intensity(s,rate){
+  if(s==="snow"){return rate<1?"Light":rate<2.5?"Moderate":"Heavy";}
+  return rate<0.5?"Light":rate<4?"Moderate":"Heavy";
+}
+function periods(n24){
+  const state=h=>h.mm>0?(h.ice?"frz":(h.k||"rain")):"dry";
+  // strip
+  $("p-strip").innerHTML=n24.map(h=>{const s=state(h);
+    if(s==="dry") return `<span title="${fmtH.format(new Date(h.t))}:00 dry"></span>`;
+    const o=Math.min(1,.35+h.mm/3);
+    return `<span title="${fmtH.format(new Date(h.t))}:00 ${r1(h.mm)} mm" style="background:${PCOL[s]};opacity:${o.toFixed(2)}"></span>`;}).join("");
+  $("p-ticks").innerHTML=n24.filter((_,i)=>i%3===0).map(h=>`<span>${fmtT.format(new Date(h.t)).replace(/\s?[ap]\.?m\.?/i,m=>m.trim().charAt(0).toLowerCase())}</span>`).join("");
+  // group consecutive hours; fold a single dry hour between two wet hours of the same type into the wet period
+  const st=n24.map(state);
+  for(let i=1;i<st.length-1;i++) if(st[i]==="dry"&&st[i-1]!=="dry"&&st[i-1]===st[i+1]) st[i]=st[i-1];
+  const P=[];
+  n24.forEach((h,i)=>{const s=st[i],L2=P[P.length-1]; if(L2&&L2.s===s) L2.h.push(h); else P.push({s,h:[h]});});
+  const NAME={rain:"Rain",snow:"Snow",mix:"Rain and snow mix",frz:"Freezing rain / ice"};
+  const items=P.map(p=>{
+    const a=p.h[0], z=p.h[p.h.length-1];
+    const start=new Date(a.t), end=new Date(new Date(z.t).getTime()+36e5);
+    const span=p.h.length;
+    const tmin=Math.round(Math.min(...p.h.map(h=>h.temp))), tmax=Math.round(Math.max(...p.h.map(h=>h.temp)));
+    const tl=tmin===tmax?`${tmin} °C`:(p.h[0].temp>p.h[span-1].temp?`${tmax} → ${tmin} °C`:`${tmin} → ${tmax} °C`);
+    const wmax=Math.max(...p.h.map(h=>kmh(h.wind||0)));
+    const range=`${when(start)} – ${when(end)}`;
+    if(p.s==="dry"){
+      const cl=p.h.reduce((s,h)=>s+(h.cloud||0),0)/span;
+      const sky=cl<25?"clear":cl<60?"partly cloudy":"cloudy";
+      const frost=tmin<=1?` · <b style="color:var(--freeze)">frost / black ice risk near ${tmin} °C</b>`:"";
+      return {html:`<li><span class="bar" style="background:var(--line)"></span><div><div class="pt"><span class="pn">Dry, ${sky}</span><span class="pw num">${range}</span></div><div class="pd">${span} h · ${tl} · wind up to ${wmax} km/h${frost}</div></div></li>`,p};
+    }
+    const tot=p.h.reduce((s,h)=>s+h.mm,0), peak=Math.max(...p.h.map(h=>h.mm));
+    const peakH=p.h.find(h=>h.mm===peak);
+    const showers=p.h.some(h=>/showers/.test(h.sym||""));
+    const isSnow=p.s==="snow";
+    const amt=isSnow?`<b>~${r1(tot)} cm</b> of snow`:`<b>${r1(tot)} mm</b>`;
+    const rate=isSnow?`${r1(peak)} cm/h`:`${r1(peak)} mm/h`;
+    const name=`${intensity(p.s,peak)} ${NAME[p.s].toLowerCase()}${showers&&p.s==="rain"?" showers":""}`;
+    const extra=p.s==="frz"?` · <b style="color:var(--ice)">roads will glaze, salt early</b>`:p.s==="mix"?` · <b style="color:var(--ice)">slush, possible ice as temps drop</b>`:(isSnow&&wmax>=35?" · <b>blowing and drifting likely</b>":"");
+    return {html:`<li><span class="bar" style="background:${PCOL[p.s]}"></span><div><div class="pt"><span class="pn">${name.charAt(0).toUpperCase()+name.slice(1)}</span><span class="pw num">${range}</span></div><div class="pd">${span} h · ${amt} total · heaviest ${rate} around ${fmtT.format(new Date(peakH.t))} · ${tl} · wind up to ${wmax} km/h${extra}</div></div></li>`,p,tot};
+  });
+  $("p-list").innerHTML=items.map(x=>x.html).join("");
+  // one-line summary
+  const wet=items.filter(x=>x.p.s!=="dry");
+  const lo=n24.reduce((m,h)=>h.temp<m.temp?h:m,n24[0]);
+  let sum;
+  if(!wet.length) sum=`Dry for the next 24 hours. Low ${Math.round(lo.temp)} °C around ${when(lo.t)}.`;
+  else{
+    const parts=wet.slice(0,3).map(x=>{const p=x.p,isS=p.s==="snow";return `${NAME[p.s].toLowerCase()} ${partOfDay(p.h[0].t)} (${p.h.length} h, ${isS?"~"+r1(x.tot)+" cm":r1(x.tot)+" mm"})`;});
+    const totR=wet.filter(x=>x.p.s==="rain").reduce((s,x)=>s+x.tot,0), totS=wet.filter(x=>x.p.s==="snow").reduce((s,x)=>s+x.tot,0);
+    sum=`Expect ${parts.join(", then ")}. ${totS>0?`Snow total about ${r1(totS)} cm. `:""}${totR>0?`Rain total ${r1(totR)} mm. `:""}Low ${Math.round(lo.temp)} °C around ${when(lo.t)}.`;
+    sum=sum.charAt(0).toUpperCase()+sum.slice(1);
+  }
+  $("p-sum").textContent=sum.replace(/\.\.$/,".");
+}
+
 let last=null;
 function show(d){last=d;try{render(d);}catch(e){console.error(e);}}
 setInterval(()=>{if(last) show(last);},10*60*1000);
@@ -388,6 +533,77 @@ try{
   const raw=document.getElementById("fc").textContent.trim();
   if(raw) show(JSON.parse(raw)); else $("fresh").textContent="No forecast saved yet.";
 }catch(e){$("fresh").textContent="Couldn't read the forecast. Reopen the page.";}
+})();
+</script>
+<script>
+(function(){
+const LAT=45.77, LON=-74.615, Z=8;
+const $=id=>document.getElementById(id);
+const box=$("map"), wf=$("wframe"), msg=$("mapmsg"), player=$("player"), help=$("rad-help");
+const live=/github\.io$/.test(location.hostname) || location.protocol==="file:";
+const tabs=[...document.querySelectorAll("#radar .tab")];
+
+if(!live || typeof L==="undefined"){
+  box.hidden=true; player.hidden=true; help.hidden=true; msg.hidden=false;
+  msg.innerHTML='Live radar maps show on the full app.<a href="https://bellfallswaterweather.github.io/#radar" target="_blank" rel="noopener">Open bellfallswaterweather.github.io ↗</a>';
+  tabs.forEach(t=>t.disabled=true);
+  return;
+}
+
+// ---- Radar loop (RainViewer, last 2 h) ----
+const dark=matchMedia("(prefers-color-scheme: dark)").matches && document.documentElement.dataset.theme!=="light";
+const map=L.map(box,{zoomControl:true,attributionControl:true,maxZoom:12,minZoom:4}).setView([LAT,LON],Z);
+L.tileLayer(`https://{s}.basemaps.cartocdn.com/${dark?"dark_all":"rastertiles/voyager"}/{z}/{x}/{y}{r}.png`,{subdomains:"abcd",maxZoom:12,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>'}).addTo(map);
+L.circleMarker([LAT,LON],{radius:7,color:"#fff",weight:2,fillColor:"#ffb81c",fillOpacity:1,pane:"markerPane"}).addTo(map).bindTooltip("Kilmar",{permanent:false});
+
+let frames=[],layers=[],idx=0,timer=null,playing=true;
+const fmt=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Toronto",hour:"numeric",minute:"2-digit"});
+function showFrame(i){
+  if(!layers.length) return;
+  layers[idx]&&layers[idx].setOpacity(0);
+  idx=(i+layers.length)%layers.length;
+  layers[idx].setOpacity(.75);
+  $("scrub").value=idx;
+  const t=new Date(frames[idx].time*1000), ago=Math.round((Date.now()-t)/60000);
+  $("ptime").textContent=(idx===layers.length-1?"Latest ":"")+fmt.format(t)+(ago>0&&idx!==layers.length-1?` · −${ago}m`:"");
+}
+function tick(){ showFrame(idx===layers.length-1?0:idx+1); timer=setTimeout(tick, idx===layers.length-1?1800:550); }
+function setPlay(p){playing=p;$("play").textContent=p?"❚❚":"▶";$("play").setAttribute("aria-label",p?"Pause":"Play");clearTimeout(timer);if(p)timer=setTimeout(tick,550);}
+async function loadFrames(){
+  try{
+    const r=await fetch("https://api.rainviewer.com/public/weather-maps.json",{cache:"no-store"});
+    const d=await r.json();
+    const past=(d.radar&&d.radar.past)||[];
+    if(!past.length) throw 0;
+    layers.forEach(l=>map.removeLayer(l));
+    frames=past;
+    layers=past.map(f=>L.tileLayer(`${d.host}${f.path}/256/{z}/{x}/{y}/2/1_1.png`,{opacity:0,maxNativeZoom:7,maxZoom:12,zIndex:5,attribution:'Radar <a href="https://www.rainviewer.com/">RainViewer</a>'}).addTo(map));
+    $("scrub").max=layers.length-1;
+    idx=layers.length-1; showFrame(idx);
+    if(playing) setPlay(true);
+    $("rad-note").textContent="";
+  }catch(e){ $("rad-note").textContent="Radar loop unavailable right now"; }
+}
+loadFrames(); setInterval(loadFrames,10*60*1000);
+$("play").onclick=()=>setPlay(!playing);
+$("scrub").oninput=e=>{setPlay(false);showFrame(+e.target.value);};
+$("recentre").onclick=()=>{ if(!wf.hidden){ wf.src=wf.src; } else map.setView([LAT,LON],Z); };
+
+// ---- Forecast maps (Windy embed with timeline) ----
+function windy(overlay){
+  const p=new URLSearchParams({lat:LAT,lon:LON,detailLat:LAT,detailLon:LON,width:650,height:420,zoom:Z,level:"surface",overlay,product:"ecmwf",menu:"",message:"true",marker:"true",calendar:"now",pressure:"",type:"map",location:"coordinates",detail:"",metricWind:"km/h",metricTemp:"°C",radarRange:"-1"});
+  return "https://embed.windy.com/embed2.html?"+p.toString();
+}
+const HELP={loop:"Pinch to zoom. Blue shades are rain, pink and purple are snow. The dot is Kilmar.",
+  rain:"Drag the timeline at the bottom to step hour by hour, days ahead. Pinch to zoom.",
+  ptype:"Precipitation type by hour: watch for freezing rain and ice pellets crossing the area.",
+  snowAccu:"Forecast new snow totals. Use the timeline to change the time window."};
+tabs.forEach(t=>t.addEventListener("click",()=>{
+  tabs.forEach(x=>x.setAttribute("aria-selected",x===t?"true":"false"));
+  const v=t.dataset.view; help.textContent=HELP[v];
+  if(v==="loop"){ wf.hidden=true; box.style.visibility=""; player.hidden=false; map.invalidateSize(); setPlay(true); }
+  else{ setPlay(false); player.hidden=true; box.style.visibility="hidden"; const u=windy(v); if(wf.dataset.v!==v){wf.src=u;wf.dataset.v=v;} wf.hidden=false; }
+}));
 })();
 </script>
 
