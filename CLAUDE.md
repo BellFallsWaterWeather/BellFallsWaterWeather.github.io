@@ -11,7 +11,7 @@ Winter road weather page for a snow plow driver, centred on Hydro Hill (510 Chem
 
 Differences between the copies are only the wrapper: `index.html` is a full document (doctype, `<head>` with viewport, home-screen metas and a small script that reloads the page after 15 minutes, but only when nobody has touched it for 5 minutes or when it comes back into view); the artifact is the same page body without that skeleton.
 
-The two map tabs are Windy embeds, precipitation only: live radar (overlay radar, product radar) and rain & snow forecast (overlay rain, product ecmwf). Owner wants rain/snow only, no wind or other layers only run on github.io; the Claude artifact's sandbox blocks map tiles and iframes, so there the radar box shows a link to the GitHub site instead.
+Radar tab: Leaflet map (Esri light/dark grey canvas base, OSM fallback) with Environment Canada GeoMet radar RADAR_1KM_RRAI / RADAR_1KM_RSNO, 2-hour loop, 6-minute frames, no key. Forecast tab: Windy embed, overlay rain, product ecmwf. Owner wants rain/snow only, no wind or other layers. Maps only run on github.io; the Claude artifact sandbox blocks map tiles and iframes, so there the radar box links to the GitHub site.
 
 ## Live forecast (every 10 minutes)
 
@@ -25,3 +25,7 @@ A Claude scheduled task ("Grenville weather refresh", hourly) fetches MET Norway
 
 When editing the page, keep exactly one `id="fc"` JSON block and keep its data shape:
 `{updatedAt, modelUpdatedAt, source, lat, lon, hours:[{t,temp,wind(m/s),dir,rh,cloud,sym,mm}], blocks:[{t,temp,wind,sym,mm}]}`.
+
+## Design
+
+Owner wants it sleek and simple: vital weather only (no road/511 links, no extra radar links). Section order: warnings, road call, conditions now, next 24 hours (summary, worst-time tiles, periods), radar, hourly 48 h, 7-day.
