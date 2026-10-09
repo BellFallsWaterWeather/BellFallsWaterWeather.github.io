@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="refresh" content="900">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BellFallsWaterWeather">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Winter road weather for Kilmar, Grenville-sur-la-Rouge: road call, hourly forecast, radar links.">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px;font-family:system-ui,-apple-system,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>BellFallsWaterWeather</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: one narrow column built for a phone in a truck cab — road call first, then now, hourly strip, radar, outlook */
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --ink:#14191f; --muted:#5b6672; --line:#d5dbe2;
+  --amber:#c27a00; --amber-ink:#1a1200; --amber-bg:#ffb81c;
+  --snow:#5d6bd8; --rain:#1f7fc4; --ice:#c2268f; --ok:#1f8a4c; --warn:#b86e00; --bad:#c62d2d;
+  --freeze:#5d6bd8;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1116; --panel:#161c23; --ink:#e9edf1; --muted:#93a0ad; --line:#26303a;
+  --amber:#ffb81c; --amber-ink:#1a1200; --amber-bg:#ffb81c;
+  --snow:#9aa6ff; --rain:#5cb3f0; --ice:#ff6fc8; --ok:#4cc77f; --warn:#ffb020; --bad:#ff6b6b; --freeze:#9aa6ff;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1116; --panel:#161c23; --ink:#e9edf1; --muted:#93a0ad; --line:#26303a;
+  --amber:#ffb81c; --amber-ink:#1a1200; --amber-bg:#ffb81c;
+  --snow:#9aa6ff; --rain:#5cb3f0; --ice:#ff6fc8; --ok:#4cc77f; --warn:#ffb020; --bad:#ff6b6b; --freeze:#9aa6ff;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:14px 40px;display:flex;flex-direction:column;gap:18px}
+h1,h2,.disp{font-family:var(--f-display);letter-spacing:.01em;text-wrap:balance;margin:0}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600}
+.num{font-variant-numeric:tabular-nums}
+a{color:inherit}
+
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+header h1{font-size:30px;font-weight:700;line-height:1}
+header .sub{color:var(--muted);font-size:13px}
+.fresh{font-size:13px;color:var(--muted);text-align:right}
+.fresh b{color:var(--ink);font-weight:600}
+.stale{color:var(--bad)!important;font-weight:600}
+
+/* Road call: the one loud element */
+.call{border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--panel);border:2px solid var(--line)}
+.call[data-level="clear"]{border-color:var(--ok)}
+.call[data-level="watch"]{border-color:var(--warn)}
+.call[data-level="go"]{border-color:var(--amber-bg);background:var(--amber-bg);color:var(--amber-ink)}
+.call[data-level="ice"]{border-color:var(--ice)}
+.call .head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.call .verdict{font-family:var(--f-display);font-size:34px;font-weight:700;line-height:1;text-transform:uppercase}
+.call .why{font-size:15px}
+.call[data-level="go"] h2{color:var(--amber-ink)}
+.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.chip{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.chip .k{font-size:11px;text-transform:uppercase;letter-spacing:.07em;opacity:.75}
+.chip .v{font-family:var(--f-display);font-size:24px;font-weight:600;line-height:1.05}
+@media (max-width:520px){.chips{grid-template-columns:repeat(2,1fr)}}
+
+/* Now */
+.now{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;align-items:center}
+.now .t{font-family:var(--f-display);font-size:64px;font-weight:600;line-height:.9}
+.now .cond{font-size:18px;font-weight:600}
+.now .meta{color:var(--muted);font-size:14px}
+.now dl{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0 0}
+.now dl div{border-top:1px solid var(--line);padding-top:6px}
+.now dt{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.now dd{margin:0;font-weight:600;font-size:16px}
+@media (max-width:520px){.now dl{grid-template-columns:repeat(2,1fr)}}
+
+/* Hourly */
+.sec{display:flex;flex-direction:column;gap:10px}
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.scroller{overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--panel);border:1px solid var(--line);border-radius:12px;scroll-snap-type:x proximity}
+.track{position:relative}
+.track svg{display:block}
+.cols{display:flex}
+.col{flex:0 0 58px;width:58px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0 10px;border-left:1px solid transparent;scroll-snap-align:start;font-size:13px}
+.col.day{border-left-color:var(--line)}
+.col .h{font-weight:600}
+.col .d{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);height:13px}
+.col .tp{font-family:var(--f-display);font-size:20px;font-weight:600}
+.col .pr{font-size:12px;font-weight:600;min-height:16px}
+.col .wd{font-size:11px;color:var(--muted);text-align:center;line-height:1.2}
+.col .fl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:1px 5px;border-radius:4px;min-height:16px}
+.fl.ice{background:var(--ice);color:#fff}
+.fl.snow{background:var(--snow);color:#fff}
+.fl.frz{border:1px solid var(--freeze);color:var(--freeze)}
+.sym{width:26px;height:22px}
+
+/* Radar */
+.radar{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rbtn{display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;min-height:96px;transition:border-color .15s}
+.rbtn:hover,.rbtn:focus-visible{border-color:var(--amber);outline:none}
+.rbtn:focus-visible{box-shadow:0 0 0 3px color-mix(in srgb,var(--amber) 40%,transparent)}
+.rbtn .n{font-family:var(--f-display);font-size:21px;font-weight:700;display:flex;justify-content:space-between;gap:8px}
+.rbtn .n span{color:var(--amber)}
+.rbtn .x{font-size:13px;color:var(--muted)}
+.rbtn .tag{align-self:flex-start;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;border-radius:4px;background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--ink)}
+.rbtn.wide{grid-column:1/-1}
+@media (max-width:520px){.radar{grid-template-columns:1fr}}
+.note{font-size:13px;color:var(--muted);margin:0}
+
+/* Outlook */
+.days{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.drow{display:grid;grid-template-columns:64px 30px 1fr auto;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line)}
+.drow:first-child{border-top:0}
+.drow .dn{font-weight:600}
+.drow .dc{font-size:14px;color:var(--muted);min-width:0}
+.drow .dt{font-family:var(--f-display);font-size:19px;font-weight:600;text-align:right;white-space:nowrap}
+.drow .dt small{color:var(--muted);font-size:15px;font-weight:500}
+
+.links{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.links a{padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel);text-decoration:none;font-weight:600;display:flex;flex-direction:column;gap:2px}
+.links a small{font-weight:400;color:var(--muted);font-size:12px}
+.links a:hover,.links a:focus-visible{border-color:var(--amber);outline:none}
+@media (max-width:520px){.links{grid-template-columns:1fr}}
+
+.empty{padding:28px 16px;text-align:center;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:12px}
+footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Grenville-sur-la-Rouge</h1>
+      <div class="sub">Kilmar Rd at Rivière-Rouge Rd · 45.77° N 74.62° W</div>
+    </div>
+    <div class="fresh" id="fresh">Loading forecast…</div>
+  </header>
+
+  <section class="call" id="call" data-level="clear" aria-live="polite">
+    <h2>Next 24 h road call</h2>
+    <div class="head"><span class="verdict" id="verdict">—</span></div>
+    <div class="why" id="why">Waiting for the latest forecast.</div>
+    <div class="chips">
+      <div class="chip"><span class="k">Snow 24 h</span><span class="v num" id="c-snow">—</span></div>
+      <div class="chip"><span class="k">Freezing-rain hrs</span><span class="v num" id="c-ice">—</span></div>
+      <div class="chip"><span class="k">Low / high</span><span class="v num" id="c-range">—</span></div>
+      <div class="chip"><span class="k">Max wind</span><span class="v num" id="c-wind">—</span></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>Conditions now</h2>
+    <div class="now" id="now"><div class="empty" style="grid-column:1/-1">Current conditions appear here once the forecast loads.</div></div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-head">
+      <h2>Hourly · next 48 h</h2>
+      <div class="legend"><span><i style="background:var(--rain)"></i>Rain</span><span><i style="background:var(--snow)"></i>Snow</span><span><i style="background:var(--ice)"></i>Freezing / mix</span><span><i style="background:var(--freeze);height:2px"></i>0 °C line</span></div>
+    </div>
+    <div class="scroller" id="hourly"><div class="empty" style="border:0">The hourly strip fills in when the forecast loads. Swipe sideways to see two days ahead.</div></div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-head"><h2>Radar &amp; future radar</h2></div>
+    <div class="radar">
+      <a class="rbtn wide" href="https://zoom.earth/maps/precipitation/#view=45.770,-74.615,8z" target="_blank" rel="noopener">
+        <span class="tag">Past + up to 7 days ahead</span>
+        <span class="n">Zoom Earth precipitation <span>↗</span></span>
+        <span class="x">Pinch-zoom map with a timeline slider. Drag forward hour by hour to watch bands move in. Opens on Grenville.</span>
+      </a>
+      <a class="rbtn" href="https://www.windy.com/-Weather-radar-radar?radar,45.770,-74.615,9" target="_blank" rel="noopener">
+        <span class="tag">Live radar</span>
+        <span class="n">Windy radar <span>↗</span></span>
+        <span class="x">Zoomable live radar loop. Switch the layer to Rain/Snow to scrub the forecast days ahead.</span>
+      </a>
+      <a class="rbtn" href="https://www.windy.com/-Snow-accumulation-snowAccu?snowAccu,45.770,-74.615,8" target="_blank" rel="noopener">
+        <span class="tag">Accumulation</span>
+        <span class="n">Windy new snow <span>↗</span></span>
+        <span class="x">Forecast snow totals on a zoomable map, by time window.</span>
+      </a>
+      <a class="rbtn" href="https://www.pivotalweather.com/model.php?m=hrdps&amp;p=prateptype_cat-imp&amp;r=ne" target="_blank" rel="noopener">
+        <span class="tag">Rain vs snow vs ice · 48 h</span>
+        <span class="n">HRDPS precip type <span>↗</span></span>
+        <span class="x">Canada's high-res model as simulated radar, hour by hour. Pink = freezing rain, the one to watch.</span>
+      </a>
+      <a class="rbtn" href="https://www.rainviewer.com/map.html?loc=45.770,-74.615,9&amp;layer=radar" target="_blank" rel="noopener">
+        <span class="tag">Last 2 h + nowcast</span>
+        <span class="n">RainViewer <span>↗</span></span>
+        <span class="x">Fast, smooth radar loop with snow coloured separately. Good for the next 30 minutes.</span>
+      </a>
+      <a class="rbtn" href="https://weather.gc.ca/radar/index_e.html?id=CASBV" target="_blank" rel="noopener">
+        <span class="tag">Official · Blainville</span>
+        <span class="n">EC radar east <span>↗</span></span>
+        <span class="x">Environment Canada's Montréal-area radar. Set "Precipitation type" to see snow vs rain.</span>
+      </a>
+      <a class="rbtn" href="https://weather.gc.ca/radar/index_e.html?id=CASFT" target="_blank" rel="noopener">
+        <span class="tag">Official · Franktown</span>
+        <span class="n">EC radar west <span>↗</span></span>
+        <span class="x">Ottawa-area radar. Storms reaching Grenville usually show here first.</span>
+      </a>
+    </div>
+    <p class="note">Maps open in your browser. This page can't embed other sites, so these links are set to open centred on Grenville.</p>
+  </section>
+
+  <section class="sec">
+    <h2>7-day outlook</h2>
+    <div class="days" id="days"><div class="empty" style="border:0">The week ahead appears here once the forecast loads.</div></div>
+  </section>
+
+  <section class="sec">
+    <h2>Roads &amp; warnings</h2>
+    <div class="links">
+      <a href="https://weather.gc.ca/warnings/index_e.html?prov=qc" target="_blank" rel="noopener">Environment Canada warnings<small>Freezing rain, snowfall and winter storm alerts for Quebec</small></a>
+      <a href="https://weather.gc.ca/en/location/index.html?coords=45.770,-74.615" target="_blank" rel="noopener">EC forecast for Grenville<small>Official forecast and hourly table</small></a>
+      <a href="https://www.quebec511.info/en/" target="_blank" rel="noopener">Québec 511<small>Road conditions, closures and traffic cameras</small></a>
+      <a href="https://511on.ca/" target="_blank" rel="noopener">Ontario 511<small>Hawkesbury and Hwy 417 side of the river</small></a>
+    </div>
+  </section>
+
+  <footer id="foot">Forecast model: MET Norway Locationforecast for 45.77° N, 74.62° W (Kilmar), refreshed automatically every hour. Road call, freezing-rain and black-ice flags are rules of thumb from temperature, humidity and precipitation, not official warnings. Snow totals assume 1 mm of water ≈ 1 cm of snow.</footer>
+</div>
+
+<script type="application/json" id="fc">{"updatedAt":"2026-10-09T08:23:49Z","modelUpdatedAt":"2026-10-09T08:21:15Z","source":"MET Norway Locationforecast 2.0 compact","lat":45.77,"lon":-74.615,"hours":[{"t":"2026-10-09T08:00:00Z","temp":6.2,"wind":2.7,"dir":265.6,"rh":97.0,"cloud":99.2,"sym":"cloudy","mm":0.0},{"t":"2026-10-09T09:00:00Z","temp":6.4,"wind":2.6,"dir":275.5,"rh":96.8,"cloud":82.0,"sym":"partlycloudy_night","mm":0.0},{"t":"2026-10-09T10:00:00Z","temp":5.9,"wind":2.8,"dir":272.8,"rh":97.8,"cloud":72.7,"sym":"partlycloudy_night","mm":0.0},{"t":"2026-10-09T11:00:00Z","temp":6.2,"wind":3.1,"dir":287.2,"rh":97.4,"cloud":60.2,"sym":"partlycloudy_day","mm":0.0},{"t":"2026-10-09T12:00:00Z","temp":6.6,"wind":3.8,"dir":287.1,"rh":95.8,"cloud":61.7,"sym":"partlycloudy_day","mm":0.0},{"t":"2026-10-09T13:00:00Z","temp":7.6,"wind":4.5,"dir":290.4,"rh":88.0,"cloud":55.5,"sym":"partlycloudy_day","mm":0.0},{"t":"2026-10-09T14:00:00Z","temp":8.9,"wind":4.4,"dir":291.0,"rh":73.8,"cloud":53.1,"sym":"partlycloudy_day","mm":0.0},{"t":"2026-10-09T15:00:00Z","temp":10.2,"wind":4.9,"dir":284.8,"rh":61.6,"cloud":89.8,"sym":"cloudy","mm":0.0},{"t":"2026-10-09T16:00:00Z","temp":10.6,"wind":5.3,"dir":282.7,"rh":57.4,"cloud":71.9,"sym":"partlycloudy_day","mm":0.0},{"t":"2026-10-09T17:00:00Z","temp":10.7,"wind":5.6,"dir":280.9,"rh":57.9,"cloud":43.0,"sym":"partlycloudy_day","mm":0.0},{"t":"2026-10-09T18:00:00Z","temp":11.4,"wind":5.8,"dir":272.8,"rh":56.6,"cloud":43.0,"sym":"rainshowers_day","mm":0.3},{"t":"2026-10-09T19:00:00Z","temp":10.7,"wind":6.0,"dir":267.4,"rh":63.2,"cloud":45.3,"sym":"rainshowers_day","mm":0.4},{"t":"2026-10-09T20:00:00Z","temp":9.4,"wind":5.2,"dir":297.6,"rh":74.6,"cloud":39.8,"sym":"rainshowers_day","mm":0.3},{"t":"2026-10-09T21:00:00Z","temp":8.2,"wind":4.2,"dir":307.7,"rh":81.7,"cloud":24.2,"sym":"fair_day","mm":0.0},{"t":"2026-10-09T22:00:00Z","temp":7.9,"wind":4.5,"dir":300.8,"rh":80.0,"cloud":18.7,"sym":"fair_night","mm":0.0},{"t":"2026-10-09T23:00:00Z","temp":7.1,"wind":4.5,"dir":310.3,"rh":81.1,"cloud":14.8,"sym":"fair_night","mm":0.0},{"t":"2026-10-10T00:00:00Z","temp":6.6,"wind":4.3,"dir":314.0,"rh":82.1,"cloud":0.0,"sym":"clearsky_night","mm":0.0},{"t":"2026-10-10T01:00:00Z","temp":5.6,"wind":4.1,"dir":324.9,"rh":83.7,"cloud":0.8,"sym":"clearsky_night","mm":0.0},{"t":"2026-10-10T02:00:00Z","temp":4.9,"wind":4.3,"dir":326.1,"rh":79.6,"cloud":1.6,"sym":"clearsky_night","mm":0.0},{"t":"2026-10-10T03:00:00Z","temp":4.0,"wind":3.4,"dir":316.4,"rh":80.2,"cloud":14.8,"sym":"fair_night","mm":0.0},{"t":"2026-10-10T04:00:00Z","temp":2.9,"wind":2.7,"dir":297.0,"rh":86.0,"cloud":24.2,"sym":"fair_night","mm":0.0},{"t":"2026-10-10T05:00:00Z","temp":2.6,"wind":2.7,"dir":305.7,"rh":88.2,"cloud":24.2,"sym":"fair_night","mm":0.0},{"t":"2026-10-10T06:00:00Z","temp":2.3,"wind":2.6,"dir":304.0,"rh":89.5,"cloud":33.6,"sym":"fair_night","mm":0.0},{"t":"2026-10-10T07:00:00Z","temp":2.0,"wind":2.3,"dir":305.7,"rh":89.1,"cloud":0.0,"sym":"clearsky_night","mm":0.0},{"t":"2026-10-10T08:00:00Z","temp":1.8,"wind":2.4,"dir":313.4,"rh":89.8,"cloud":8.6,"sym":"clearsky_night","mm":0.0},{"t":"2026-10-10T09:00:00Z","temp":1.7,"wind":2.3,"dir":321.2,"rh":89.5,"cloud":0.0,"sym":"clearsky_night","mm":0.0},{"t":"2026-10-10T10:00:00Z","temp":1.6,"wind":2.2,"dir":311.1,"rh":89.3,"cloud":0.0,"sym":"clearsky_night","mm":0.0},{"t":"2026-10-10T11:00:00Z","temp":1.6,"wind":2.0,"dir":312.7,"rh":89.2,"cloud":0.0,"sym":"clearsky_day","mm":0.0},{"t":"2026-10-10T12:00:00Z","temp":2.9,"wind":1.9,"dir":296.3,"rh":90.2,"cloud":0.0,"sym":"clearsky_day","mm":0.0},{"t":"2026-10-10T13:00:00Z","temp":5.4,"wind":1.6,"dir":299.5,"rh":77.5,"cloud":0.0,"sym":"clearsky_day","mm":0.0},{"t":"2026-10-10T14:00:00Z","temp":7.2,"wind":2.0,"dir":316.3,"rh":58.8,"cloud":0.0,"sym":"clearsky_day","mm":0.0},{"t":"2026-10-10T15:00:00Z","temp":8.5,"wind":2.0,"dir":311.9,"rh":50.7,"cloud":0.0,"sym":"clearsky_day","mm":0.0},{"t":"2026-10-10T16:00:00Z","temp":9.6,"wind":1.9,"dir":300.5,"rh":47.3,"cloud":0.0,"sym":"clearsky_day","mm":0.0},{"t":"2026-10-10T17:00:00Z","temp":10.7,"wind":1.8,"dir":282.3,"rh":44.9,"cloud":0.0,"sym":"clearsky_day","mm":0.0},{"t":"2026-10-10T18:00:00Z","temp":11.4,"wind":1.8,"dir":275.2,"rh":43.7,"cloud":0.0,"sym":"clearsky_day","mm":0.0},{"t":"2026-10-10T19:00:00Z","temp":11.8,"wind":2.5,"dir":247.0,"rh":43.7,"cloud":0.0,"sym":"clearsky_day","mm":0.0},{"t":"2026-10-10T20:00:00Z","temp":11.5,"wind":2.8,"dir":231.7,"rh":48.8,"cloud":0.0,"sym":"clearsky_day","mm":0.0},{"t":"2026-10-10T21:00:00Z","temp":10.6,"wind":2.4,"dir":230.4,"rh":55.1,"cloud":0.0,"sym":"clearsky_day","mm":0.0},{"t":"2026-10-10T22:00:00Z","temp":8.5,"wind":2.3,"dir":216.4,"rh":69.1,"cloud":0.0,"sym":"clearsky_night","mm":0.0},{"t":"2026-10-10T23:00:00Z","temp":7.0,"wind":1.9,"dir":183.2,"rh":73.9,"cloud":80.5,"sym":"partlycloudy_night","mm":0.0},{"t":"2026-10-11T00:00:00Z","temp":6.5,"wind":2.4,"dir":163.1,"rh":75.3,"cloud":100.0,"sym":"partlycloudy_night","mm":0.0},{"t":"2026-10-11T01:00:00Z","temp":6.3,"wind":2.4,"dir":149.1,"rh":75.7,"cloud":100.0,"sym":"partlycloudy_night","mm":0.0},{"t":"2026-10-11T02:00:00Z","temp":6.1,"wind":2.7,"dir":129.5,"rh":77.1,"cloud":100.0,"sym":"partlycloudy_night","mm":0.0},{"t":"2026-10-11T03:00:00Z","temp":6.2,"wind":3.0,"dir":127.8,"rh":76.2,"cloud":100.0,"sym":"partlycloudy_night","mm":0.0},{"t":"2026-10-11T04:00:00Z","temp":6.2,"wind":3.3,"dir":128.0,"rh":75.6,"cloud":78.9,"sym":"partlycloudy_night","mm":0.0},{"t":"2026-10-11T05:00:00Z","temp":6.4,"wind":3.8,"dir":128.1,"rh":75.0,"cloud":100.0,"sym":"partlycloudy_night","mm":0.0},{"t":"2026-10-11T06:00:00Z","temp":6.6,"wind":3.9,"dir":127.0,"rh":72.3,"cloud":100.0,"sym":"partlycloudy_night","mm":0.0},{"t":"2026-10-11T07:00:00Z","temp":6.7,"wind":3.8,"dir":128.6,"rh":71.7,"cloud":100.0,"sym":"partlycloudy_night","mm":0.0}],"blocks":[{"t":"2026-10-11T12:00:00Z","temp":8.1,"wind":3.4,"sym":"partlycloudy_day","mm":0.0},{"t":"2026-10-11T18:00:00Z","temp":17.1,"wind":4.3,"sym":"cloudy","mm":0.0},{"t":"2026-10-12T00:00:00Z","temp":12.5,"wind":3.7,"sym":"cloudy","mm":0.0},{"t":"2026-10-12T06:00:00Z","temp":7.9,"wind":1.8,"sym":"cloudy","mm":0.0},{"t":"2026-10-12T12:00:00Z","temp":9.8,"wind":2.2,"sym":"cloudy","mm":0.1},{"t":"2026-10-12T18:00:00Z","temp":14.4,"wind":1.9,"sym":"cloudy","mm":0.3},{"t":"2026-10-13T00:00:00Z","temp":12.0,"wind":2.1,"sym":"heavyrain","mm":6.0},{"t":"2026-10-13T06:00:00Z","temp":12.1,"wind":3.7,"sym":"heavyrain","mm":7.4},{"t":"2026-10-13T12:00:00Z","temp":13.2,"wind":3.9,"sym":"cloudy","mm":0.2},{"t":"2026-10-13T18:00:00Z","temp":9.5,"wind":6.9,"sym":"cloudy","mm":0.0},{"t":"2026-10-14T00:00:00Z","temp":6.3,"wind":6.7,"sym":"cloudy","mm":0.0},{"t":"2026-10-14T06:00:00Z","temp":5.1,"wind":4.8,"sym":"fair_night","mm":0.0},{"t":"2026-10-14T12:00:00Z","temp":3.4,"wind":4.1,"sym":"clearsky_day","mm":0.0},{"t":"2026-10-14T18:00:00Z","temp":11.2,"wind":3.1,"sym":"clearsky_day","mm":0.0},{"t":"2026-10-15T00:00:00Z","temp":5.7,"wind":3.3,"sym":"clearsky_night","mm":0.0},{"t":"2026-10-15T06:00:00Z","temp":1.6,"wind":2.0,"sym":"clearsky_night","mm":0.0},{"t":"2026-10-15T12:00:00Z","temp":1.5,"wind":2.3,"sym":"clearsky_day","mm":0.0},{"t":"2026-10-15T18:00:00Z","temp":10.9,"wind":1.4,"sym":"partlycloudy_day","mm":0.0},{"t":"2026-10-16T00:00:00Z","temp":4.6,"wind":3.1,"sym":"cloudy","mm":0.0},{"t":"2026-10-16T06:00:00Z","temp":7.0,"wind":4.6,"sym":"rain","mm":2.2},{"t":"2026-10-16T12:00:00Z","temp":6.2,"wind":5.0,"sym":"heavyrain","mm":7.9},{"t":"2026-10-16T18:00:00Z","temp":10.4,"wind":4.0,"sym":"rain","mm":4.6},{"t":"2026-10-17T00:00:00Z","temp":15.4,"wind":4.3,"sym":"cloudy","mm":0.4},{"t":"2026-10-17T06:00:00Z","temp":11.7,"wind":3.1,"sym":"lightrain","mm":0.6},{"t":"2026-10-17T12:00:00Z","temp":10.8,"wind":2.9,"sym":"rain","mm":1.2},{"t":"2026-10-17T18:00:00Z","temp":12.8,"wind":4.6,"sym":"cloudy","mm":0.4},{"t":"2026-10-18T00:00:00Z","temp":9.9,"wind":4.3,"sym":"cloudy","mm":0.0},{"t":"2026-10-18T06:00:00Z","temp":5.0,"wind":2.3,"sym":"cloudy","mm":0.0}]}</script>
+<script>
+(function(){
+const TZ="America/Toronto";
+const $=id=>document.getElementById(id);
+const fmtH=new Intl.DateTimeFormat("en-CA",{timeZone:TZ,hour:"numeric",hour12:false});
+const fmtD=new Intl.DateTimeFormat("en-CA",{timeZone:TZ,weekday:"short"});
+const fmtDay=new Intl.DateTimeFormat("en-CA",{timeZone:TZ,year:"numeric",month:"2-digit",day:"2-digit"});
+const fmtStamp=new Intl.DateTimeFormat("en-CA",{timeZone:TZ,weekday:"short",hour:"numeric",minute:"2-digit"});
+const kmh=ms=>Math.round(ms*3.6);
+const DIRS=["N","NE","E","SE","S","SW","W","NW"];
+const dir=d=>DIRS[Math.round(((d%360)+360)%360/45)%8];
+const r1=x=>Math.round(x*10)/10;
+
+function kind(sym,temp){
+  const s=sym||"";
+  if(/sleet/.test(s)) return "mix";
+  if(/snow/.test(s)) return temp>2?"mix":"snow";
+  if(/rain|showers|drizzle/.test(s)) return temp<=0.5?"frz":"rain";
+  return null;
+}
+function label(sym){
+  const s=(sym||"").replace(/_(day|night|polartwilight)$/,"");
+  const map={clearsky:"Clear",fair:"Mostly clear",partlycloudy:"Partly cloudy",cloudy:"Cloudy",fog:"Fog",
+    lightrain:"Light rain",rain:"Rain",heavyrain:"Heavy rain",lightrainshowers:"Light showers",rainshowers:"Showers",heavyrainshowers:"Heavy showers",
+    lightsnow:"Light snow",snow:"Snow",heavysnow:"Heavy snow",lightsnowshowers:"Snow flurries",snowshowers:"Snow showers",heavysnowshowers:"Heavy snow showers",
+    lightsleet:"Light ice pellets",sleet:"Ice pellets / mix",heavysleet:"Heavy ice pellets",lightsleetshowers:"Light mix showers",sleetshowers:"Mix showers",heavysleetshowers:"Heavy mix showers"};
+  if(map[s]) return map[s];
+  if(/thunder/.test(s)) return "Thunderstorms";
+  return s.replace(/([a-z])([A-Z])/g,"$1 $2")||"—";
+}
+function windChill(t,v){ if(t>10||v<5) return null; const p=Math.pow(v,0.16); return Math.round(13.12+0.6215*t-11.37*p+0.3965*t*p); }
+
+function icon(sym){
+  const s=sym||""; const night=/night/.test(s);
+  const c='stroke="currentColor" fill="none" stroke-width="1.6" stroke-linecap="round"';
+  const sun=night?`<path d="M9 4a6 6 0 1 0 7 7a5 5 0 0 1-7-7z" ${c}/>`:`<circle cx="9" cy="8" r="3.5" ${c}/><path d="M9 1.5v1.5M9 13v1.5M2.5 8H4M14 8h1.5M4.4 3.4l1 1M12.6 3.4l-1 1" ${c}/>`;
+  const cloud=`<path d="M7 17h11a4 4 0 0 0 0-8a5.5 5.5 0 0 0-10.5 1.5A3.3 3.3 0 0 0 7 17z" ${c}/>`;
+  let extra="";
+  if(/snow/.test(s)) extra=`<g fill="var(--snow)"><circle cx="9" cy="20.5" r="1.2"/><circle cx="14" cy="21" r="1.2"/><circle cx="19" cy="20.5" r="1.2"/></g>`;
+  else if(/sleet/.test(s)) extra=`<path d="M9 19l-1 2.5" stroke="var(--rain)" stroke-width="1.6" stroke-linecap="round"/><circle cx="14" cy="20.5" r="1.2" fill="var(--snow)"/><path d="M19 19l-1 2.5" stroke="var(--rain)" stroke-width="1.6" stroke-linecap="round"/>`;
+  else if(/rain|showers/.test(s)) extra=`<path d="M9 19l-1 2.5M14 19l-1 2.5M19 19l-1 2.5" stroke="var(--rain)" stroke-width="1.6" stroke-linecap="round"/>`;
+  if(/thunder/.test(s)) extra+=`<path d="M14 17l-2 3h3l-2 3" stroke="var(--warn)" stroke-width="1.6" fill="none"/>`;
+  let body;
+  if(/^clearsky/.test(s)) body=`<g transform="translate(4,3)">${sun}</g>`;
+  else if(/^fair|^partlycloudy/.test(s)) body=`<g transform="translate(-1,-1) scale(.9)">${sun}</g><g transform="translate(2,0)">${cloud}</g>`;
+  else if(/^fog/.test(s)) body=`<path d="M4 9h18M6 13h16M4 17h18" ${c}/>`;
+  else body=`<g transform="translate(-1,-3)">${cloud}</g>`;
+  return `<svg class="sym" viewBox="0 0 26 24" aria-hidden="true">${body}${extra}</svg>`;
+}
+
+function render(d){
+  const hours=(d.hours||[]).filter(h=>h&&h.t).slice(0,48);
+  if(!hours.length) return;
+  const now=Date.now();
+  // freshness
+  const upd=d.updatedAt?new Date(d.updatedAt):null;
+  const age=upd?(now-upd)/36e5:99;
+  $("fresh").innerHTML=upd?`Updated <b>${fmtStamp.format(upd)}</b>${age>2?`<br><span class="stale">${Math.round(age)} h old — check radar</span>`:""}`:"";
+
+  // drop hours already past (keep the current one)
+  const live=hours.filter(h=>new Date(h.t).getTime()>now-36e5);
+  const H=live.length?live:hours;
+
+  // enrich
+  let wetRecent=0;
+  H.forEach(h=>{
+    h.k=kind(h.sym,h.temp); h.mm=h.mm||0;
+    h.snowcm=(h.k==="snow"||h.k==="mix")?h.mm:0;
+    h.ice = h.mm>0 && (h.k==="frz" || (h.k==="mix" && h.temp<=1));
+    wetRecent = h.mm>0 ? 6 : Math.max(0,wetRecent-1);
+    h.black = !h.ice && h.temp<=0.5 && h.temp>=-8 && (wetRecent>0 || (h.rh||0)>=92);
+  });
+
+  // road call (24 h)
+  const n24=H.slice(0,24);
+  const snow=n24.reduce((a,h)=>a+h.snowcm,0);
+  const iceHrs=n24.filter(h=>h.ice).length;
+  const blackHrs=n24.filter(h=>h.black).length;
+  const lo=Math.min(...n24.map(h=>h.temp)), hi=Math.max(...n24.map(h=>h.temp));
+  const wmax=Math.max(...n24.map(h=>kmh(h.wind||0)));
+  const blowing = wmax>=35 && snow>=1;
+  let level="clear", verdict="Roads clear", why="No snow or ice expected in the next 24 hours.";
+  const firstSnow=n24.find(h=>h.snowcm>0), firstIce=n24.find(h=>h.ice);
+  const at=h=>`${fmtD.format(new Date(h.t))} ${fmtH.format(new Date(h.t))}:00`;
+  if(iceHrs>0){level="ice";verdict="Ice risk";why=`Freezing rain or mixed precipitation from about ${at(firstIce)}. Plan for sanding and salting.`;}
+  else if(snow>=5){level="go";verdict="Plow out";why=`About ${Math.round(snow)} cm of snow, starting around ${at(firstSnow)}.${blowing?" Gusty wind will drift it back in.":""}`;}
+  else if(snow>=1||blackHrs>=3){level="watch";verdict="Watch";why=snow>=1?`Light snow, about ${r1(snow)} cm, from ${at(firstSnow)}.`:`Below freezing with moisture around for ${blackHrs} h. Black ice possible on bridges and shaded curves.`;}
+  else if(lo<=1&&lo>-1){level="watch";verdict="Frost watch";why=`Temperature drops to ${Math.round(lo)} °C. Watch for frost on bridges and low spots.`;}
+  $("call").dataset.level=level; $("verdict").textContent=verdict; $("why").textContent=why;
+  $("c-snow").textContent=snow<0.5?"0 cm":`${snow<10?r1(snow):Math.round(snow)} cm`;
+  $("c-ice").textContent=iceHrs+" h";
+  $("c-range").textContent=`${Math.round(lo)}° / ${Math.round(hi)}°`;
+  $("c-wind").textContent=wmax+" km/h";
+
+  // now
+  const c=H[0]; const v=kmh(c.wind||0); const wc=windChill(c.temp,v);
+  $("now").innerHTML=`<div class="t num">${Math.round(c.temp)}°</div>
+    <div><div class="cond">${label(c.sym)}</div><div class="meta">${wc!==null&&wc<c.temp-1?`Wind chill ${wc}`:"Feels like "+Math.round(c.temp)}° · hour of ${fmtH.format(new Date(c.t))}:00</div></div>
+    <dl><div><dt>Wind</dt><dd class="num">${dir(c.dir||0)} ${v} km/h</dd></div>
+    <div><dt>Humidity</dt><dd class="num">${Math.round(c.rh||0)}%</dd></div>
+    <div><dt>Precip this hr</dt><dd class="num">${c.mm?r1(c.mm)+" mm":"None"}</dd></div>
+    <div><dt>Road surface</dt><dd>${c.ice?"Icing":c.black?"Black-ice risk":c.temp<=0?"Freezing":"Above 0 °C"}</dd></div></dl>`;
+
+  // hourly strip with chart
+  const W=58, n=H.length, CH=110, top=14, bot=12;
+  const temps=H.map(h=>h.temp); let tmin=Math.min(...temps,0)-2, tmax=Math.max(...temps,0)+2;
+  const y=t=>top+(tmax-t)/(tmax-tmin)*(CH-top-bot);
+  const pmax=Math.max(4,...H.map(h=>h.mm));
+  const colr={rain:"var(--rain)",snow:"var(--snow)",frz:"var(--ice)",mix:"var(--ice)"};
+  let bars="",pts=[];
+  H.forEach((h,i)=>{
+    const x=i*W+W/2;
+    if(h.mm>0){const bh=Math.max(3,h.mm/pmax*(CH-top-bot)*.7);bars+=`<rect x="${x-12}" y="${CH-bot-bh}" width="24" height="${bh}" rx="2" fill="${colr[h.k]||"var(--rain)"}" opacity=".55"/>`;}
+    pts.push(`${x},${y(h.temp).toFixed(1)}`);
+  });
+  const zy=y(0).toFixed(1);
+  const svg=`<svg width="${n*W}" height="${CH}" viewBox="0 0 ${n*W} ${CH}" role="img" aria-label="Temperature and precipitation for the next ${n} hours">
+    ${bars}
+    <line x1="0" x2="${n*W}" y1="${zy}" y2="${zy}" stroke="var(--freeze)" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <text x="4" y="${+zy-4}" font-size="10" fill="var(--freeze)" font-family="Barlow, sans-serif">0 °C</text>
+    <polyline points="${pts.join(" ")}" fill="none" stroke="var(--amber)" stroke-width="2.5" stroke-linejoin="round"/>
+    ${H.map((h,i)=>`<circle cx="${i*W+W/2}" cy="${y(h.temp).toFixed(1)}" r="${i===0?4:2.2}" fill="${h.temp<=0?"var(--freeze)":"var(--amber)"}"/>`).join("")}
+  </svg>`;
+  let prevDay=null;
+  const cols=H.map((h,i)=>{
+    const dt=new Date(h.t), dk=fmtDay.format(dt), newDay=dk!==prevDay; prevDay=dk;
+    const hr=fmtH.format(dt);
+    const pr=h.mm>0?`<span style="color:${colr[h.k]||"var(--rain)"}">${h.snowcm>0?r1(h.snowcm)+"cm":r1(h.mm)+"mm"}</span>`:"";
+    const fl=h.ice?`<span class="fl ice">Ice</span>`:h.snowcm>0?`<span class="fl snow">Snow</span>`:h.black?`<span class="fl frz">Black ice</span>`:"";
+    return `<div class="col${newDay&&i>0?" day":""}"><span class="d">${newDay||i===0?fmtD.format(dt):""}</span><span class="h num">${i===0?"Now":hr+"h"}</span>${icon(h.sym)}<span class="tp num">${Math.round(h.temp)}°</span><span class="pr num">${pr}</span><span class="wd num">${dir(h.dir||0)}<br>${kmh(h.wind||0)}</span><span class="fl-wrap">${fl}</span></div>`;
+  }).join("");
+  $("hourly").innerHTML=`<div class="track" style="width:${n*W}px">${svg}<div class="cols">${cols}</div></div>`;
+
+  // 7-day: hours + 6h blocks grouped by local day
+  const byDay=new Map();
+  const add=(t,temp,mm,sym,wind)=>{const k=fmtDay.format(new Date(t));if(!byDay.has(k))byDay.set(k,{t,temps:[],mm:0,syms:[],wind:0});const o=byDay.get(k);o.temps.push(temp);o.mm+=mm||0;if(sym)o.syms.push(sym);o.wind=Math.max(o.wind,wind||0);};
+  hours.forEach(h=>add(h.t,h.temp,h.mm,h.sym,h.wind));
+  const lastHr=new Date(hours[hours.length-1].t).getTime();
+  (d.blocks||[]).forEach(b=>{if(new Date(b.t).getTime()>lastHr) add(b.t,b.temp,b.mm,b.sym,b.wind);});
+  const rank=s=>/heavy(snow|sleet)/.test(s)?9:/sleet/.test(s)?8:/snow/.test(s)?7:/heavyrain/.test(s)?6:/rain|showers/.test(s)?5:/cloudy/.test(s)&&!/partly/.test(s)?3:/partly|fair/.test(s)?2:1;
+  const today=fmtDay.format(new Date());
+  const rows=[...byDay.entries()].filter(([k])=>k>=today).slice(0,7).map(([k,o])=>{
+    const sym=o.syms.slice().sort((a,b)=>rank(b)-rank(a))[0]||"";
+    const lo=Math.round(Math.min(...o.temps)), hi=Math.round(Math.max(...o.temps));
+    const ty=kind(sym,(lo+hi)/2);
+    const amt=o.mm>=0.5?` · ${ty==="snow"?"~"+Math.round(o.mm)+" cm snow":r1(o.mm)+" mm"}`:"";
+    const name=k===today?"Today":fmtD.format(new Date(o.t));
+    return `<div class="drow"><span class="dn">${name}</span>${icon(sym)}<span class="dc">${label(sym)}${amt}${ty==="frz"||ty==="mix"?' · <b style="color:var(--ice)">ice risk</b>':""}</span><span class="dt num">${hi}° <small>${lo}°</small></span></div>`;
+  }).join("");
+  $("days").innerHTML=rows||'<div class="empty" style="border:0">No outlook data yet.</div>';
+}
+
+let last=null;
+function show(d){last=d;try{render(d);}catch(e){console.error(e);}}
+setInterval(()=>{if(last) show(last);},10*60*1000);
+
+try{
+  const raw=document.getElementById("fc").textContent.trim();
+  if(raw) show(JSON.parse(raw)); else $("fresh").textContent="No forecast saved yet.";
+}catch(e){$("fresh").textContent="Couldn't read the forecast. Reopen the page.";}
+})();
+</script>
+
+</body>
+</html>
