@@ -138,12 +138,7 @@ header .sub{color:var(--muted);font-size:13px}
 .drow .dt{font-family:var(--f-display);font-size:19px;font-weight:600;text-align:right;white-space:nowrap}
 .drow .dt small{color:var(--muted);font-size:15px;font-weight:500}
 
-.links{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-.links a{padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel);text-decoration:none;font-weight:600;display:flex;flex-direction:column;gap:2px}
-.links a small{font-weight:400;color:var(--muted);font-size:12px}
-.links a:hover,.links a:focus-visible{border-color:var(--amber);outline:none}
-@media (max-width:520px){.links{grid-template-columns:1fr}}
-
+@media (max-width:520px){
 /* Next 24 h periods */
 .summary{margin:0;font-size:16px;font-weight:500;max-width:65ch}
 .strip-wrap{display:flex;flex-direction:column;gap:4px}
@@ -279,17 +274,6 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
   <section class="sec">
     <h2>7-day outlook</h2>
     <div class="days" id="days"><div class="empty" style="border:0">The week ahead appears here once the forecast loads.</div></div>
-  </section>
-
-  <section class="sec">
-    <h2>Roads &amp; warnings</h2>
-    <div class="links">
-      <a href="https://weather.gc.ca/warnings/index_e.html?prov=qc" target="_blank" rel="noopener">Environment Canada warnings<small>Freezing rain, snowfall and winter storm alerts for Quebec</small></a>
-      <a href="https://weather.gc.ca/en/location/index.html?coords=45.6804,-74.6551" target="_blank" rel="noopener">EC forecast for Grenville<small>Official forecast and hourly table</small></a>
-      <a href="https://www.theweathernetwork.com/en/city/ca/quebec/grenville-sur-la-rouge/current" target="_blank" rel="noopener">The Weather Network<small>Their forecast and radar for Grenville-sur-la-Rouge</small></a>
-      <a href="https://www.quebec511.info/en/" target="_blank" rel="noopener">Québec 511<small>Road conditions, closures and traffic cameras</small></a>
-      <a href="https://511on.ca/" target="_blank" rel="noopener">Ontario 511<small>Hawkesbury and Hwy 417 side of the river</small></a>
-    </div>
   </section>
 
   <footer id="foot">Forecast for 45.680° N, 74.655° W (510 Chemin Kilmar). Live data comes from Open-Meteo using Environment Canada's GEM model, checked every 10 minutes while the page is open. If that can't be reached, the page shows a backup forecast from MET Norway saved every hour. Road call, freezing-rain and black-ice flags are rules of thumb from temperature, humidity and precipitation, not official warnings. Snow totals assume 1 mm of water ≈ 1 cm of snow.</footer>
