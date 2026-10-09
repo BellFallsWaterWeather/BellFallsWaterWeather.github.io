@@ -1,6 +1,6 @@
 # BellFallsWaterWeather
 
-Winter road weather page for a snow plow driver, centred on Chemin de Kilmar at Chemin de la Rivière-Rouge, Grenville-sur-la-Rouge, QC (lat 45.77, lon -74.615).
+Winter road weather page for a snow plow driver, centred on 510 Chemin Kilmar, Grenville-sur-la-Rouge, QC (lat 45.6804, lon -74.6551).
 
 ## Two copies, always kept in sync
 
