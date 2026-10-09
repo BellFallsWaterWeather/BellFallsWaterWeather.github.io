@@ -177,6 +177,7 @@ header .sub{color:var(--muted);font-size:13px}
 .player[hidden]{display:none!important}
 .pbtn{flex:0 0 auto;width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:16px;cursor:pointer}
 .pbtn:focus-visible{outline:3px solid color-mix(in srgb,var(--amber) 60%,transparent)}
+.pbtn.wide{width:auto;padding:0 12px;font:600 14px var(--f-body)}
 #scrub{flex:1;min-width:0;accent-color:var(--amber)}
 .ptime{flex:0 0 auto;min-width:84px;text-align:right;font-weight:600}
 .leaflet-container{background:var(--panel);font-family:var(--f-body)}
@@ -238,9 +239,10 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
       <button class="pbtn" id="play" aria-label="Pause">❚❚</button>
       <input type="range" id="scrub" min="0" max="0" value="0" aria-label="Radar frame">
       <span class="ptime num" id="ptime">—</span>
+      <button class="pbtn wide" id="ptype">Rain</button>
       <button class="pbtn" id="recentre" aria-label="Recentre on Kilmar">◎</button>
     </div>
-    <p class="note" id="rad-help">Pinch to zoom. Blue shades are rain, pink and purple are snow. The dot is Kilmar.</p>
+    <p class="note" id="rad-help">Pinch to zoom. Environment Canada radar, updated every 6 minutes. Tap Rain or Snow to switch the colour scale. The dot is Kilmar.</p>
   </section>
 
   <section class="sec">
@@ -415,7 +417,7 @@ function render(d){
   try{ periods(n24); }catch(e){ console.error(e); }
 
   // now
-  const c=H[0]; const v=kmh(c.wind||0); const wc=windChill(c.temp,v);
+  const c=H[0]; window.__nowTemp=c.temp; const v=kmh(c.wind||0); const wc=windChill(c.temp,v);
   $("now").innerHTML=`<div class="t num">${Math.round(c.temp)}°</div>
     <div><div class="cond">${label(c.sym)}</div><div class="meta">${wc!==null&&wc<c.temp-1?`Wind chill ${wc}`:"Feels like "+Math.round(c.temp)}° · hour of ${fmtH.format(new Date(c.t))}:00</div></div>
     <dl><div><dt>Wind</dt><dd class="num">${dir(c.dir||0)} ${v} km/h</dd></div>
@@ -617,26 +619,46 @@ function showFrame(i){
   idx=(i+layers.length)%layers.length;
   layers[idx].setOpacity(.75);
   $("scrub").value=idx;
-  const t=new Date(frames[idx].time*1000), ago=Math.round((Date.now()-t)/60000);
+  const t=frames[idx], ago=Math.round((Date.now()-t)/60000);
   $("ptime").textContent=(idx===layers.length-1?"Latest ":"")+fmt.format(t)+(ago>0&&idx!==layers.length-1?` · −${ago}m`:"");
 }
 function tick(){ showFrame(idx===layers.length-1?0:idx+1); timer=setTimeout(tick, idx===layers.length-1?1800:550); }
 function setPlay(p){playing=p;$("play").textContent=p?"❚❚":"▶";$("play").setAttribute("aria-label",p?"Pause":"Play");clearTimeout(timer);if(p)timer=setTimeout(tick,550);}
+// Environment Canada GeoMet radar (no key): 1 km composite, frames every 6 min
+const GEOMET="https://geo.weather.gc.ca/geomet";
+const NFRAMES=20; // 2 hours
+let rlayer=(window.__nowTemp!=null&&window.__nowTemp<=1)?"RADAR_1KM_RSNO":"RADAR_1KM_RRAI";
+function setTypeLabel(){$("ptype").textContent=rlayer==="RADAR_1KM_RSNO"?"Snow":"Rain";$("ptype").setAttribute("aria-label","Radar scale: "+(rlayer==="RADAR_1KM_RSNO"?"snow (cm/h)":"rain (mm/h)")+". Tap to switch.");}
+async function frameTimes(){
+  try{
+    const r=await fetch(`${GEOMET}?service=WMS&version=1.3.0&request=GetCapabilities&layer=${rlayer}`,{cache:"no-store"});
+    const x=new DOMParser().parseFromString(await r.text(),"text/xml");
+    const dim=[...x.getElementsByTagName("Dimension")].find(d=>d.getAttribute("name")==="time");
+    const [a,b,step]=dim.textContent.trim().split("/");
+    const m=/PT(\d+)M/.exec(step), stepMs=(m?+m[1]:6)*6e4, end=new Date(b).getTime(), start=new Date(a).getTime();
+    const out=[]; for(let t=end;t>=start&&out.length<NFRAMES;t-=stepMs) out.unshift(new Date(t));
+    if(out.length) return out;
+  }catch(e){}
+  // fallback: assume 6-minute steps, latest frame ~12 min old
+  const step=6*6e4, end=Math.floor((Date.now()-12*6e4)/step)*step, out=[];
+  for(let i=NFRAMES-1;i>=0;i--) out.push(new Date(end-i*step));
+  return out;
+}
+const iso=d=>d.toISOString().replace(/\.\d{3}Z$/,"Z");
 async function loadFrames(){
   try{
-    const r=await fetch("https://api.rainviewer.com/public/weather-maps.json",{cache:"no-store"});
-    const d=await r.json();
-    const past=(d.radar&&d.radar.past)||[];
-    if(!past.length) throw 0;
+    const times=await frameTimes();
     layers.forEach(l=>map.removeLayer(l));
-    frames=past;
-    layers=past.map(f=>L.tileLayer(`${d.host}${f.path}/256/{z}/{x}/{y}/2/1_1.png`,{opacity:0,maxNativeZoom:7,maxZoom:12,zIndex:5,attribution:'Radar <a href="https://www.rainviewer.com/">RainViewer</a>'}).addTo(map));
+    frames=times;
+    layers=times.map(t=>L.tileLayer.wms(GEOMET,{layers:rlayer,format:"image/png",transparent:true,version:"1.3.0",time:iso(t),opacity:0,zIndex:5,tileSize:512,zoomOffset:-1,attribution:'Radar © <a href="https://eccc-msc.github.io/open-data/">Environment Canada</a>'}).addTo(map));
     $("scrub").max=layers.length-1;
     idx=layers.length-1; showFrame(idx);
     if(playing) setPlay(true);
     $("rad-note").textContent="";
   }catch(e){ $("rad-note").textContent="Radar loop unavailable right now"; }
 }
+setTypeLabel();
+$("ptype").onclick=()=>{rlayer=rlayer==="RADAR_1KM_RSNO"?"RADAR_1KM_RRAI":"RADAR_1KM_RSNO";setTypeLabel();loadFrames();};
 loadFrames(); setInterval(loadFrames,10*60*1000);
 $("play").onclick=()=>setPlay(!playing);
 $("scrub").oninput=e=>{setPlay(false);showFrame(+e.target.value);};
@@ -647,7 +669,7 @@ function windy(overlay){
   const p=new URLSearchParams({lat:LAT,lon:LON,detailLat:LAT,detailLon:LON,width:650,height:420,zoom:Z,level:"surface",overlay,product:"ecmwf",menu:"",message:"true",marker:"true",calendar:"now",pressure:"",type:"map",location:"coordinates",detail:"",metricWind:"km/h",metricTemp:"°C",radarRange:"-1"});
   return "https://embed.windy.com/embed2.html?"+p.toString();
 }
-const HELP={loop:"Pinch to zoom. Blue shades are rain, pink and purple are snow. The dot is Kilmar.",
+const HELP={loop:"Pinch to zoom. Environment Canada radar, updated every 6 minutes. Tap Rain or Snow to switch the colour scale. The dot is Kilmar.",
   rain:"Drag the timeline at the bottom to step hour by hour, days ahead. Pinch to zoom.",
   ptype:"Precipitation type by hour: watch for freezing rain and ice pellets crossing the area.",
   snowAccu:"Forecast new snow totals. Use the timeline to change the time window."};
