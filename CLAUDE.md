@@ -9,7 +9,9 @@ Winter road weather page for a snow plow driver, centred on Chemin de Kilmar at 
 
 **Rule from the owner:** any change made to the app in Claude must also be made here, and the reverse. Apply every edit to both copies in the same turn.
 
-Differences between the copies are only the wrapper: `index.html` is a full document (doctype, `<head>` with viewport, home-screen metas and a 15-minute meta refresh); the artifact is the same page body without that skeleton.
+Differences between the copies are only the wrapper: `index.html` is a full document (doctype, `<head>` with viewport, home-screen metas and a small script that reloads the page after 15 minutes, but only when nobody has touched it for 5 minutes or when it comes back into view); the artifact is the same page body without that skeleton.
+
+The live radar map (Leaflet + RainViewer past-2-hour loop) and the forecast maps (Windy embed: rain, ptype, snowAccu) only run on github.io; the Claude artifact's sandbox blocks map tiles and iframes, so there the radar box shows a link to the GitHub site instead.
 
 ## Hourly forecast refresh
 
