@@ -127,16 +127,6 @@ header .sub{color:var(--muted);font-size:13px}
 .sym{width:26px;height:22px}
 
 /* Radar */
-.radar{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.rbtn{display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:12px;background:var(--panel);border:1px solid var(--line);text-decoration:none;min-height:96px;transition:border-color .15s}
-.rbtn:hover,.rbtn:focus-visible{border-color:var(--amber);outline:none}
-.rbtn:focus-visible{box-shadow:0 0 0 3px color-mix(in srgb,var(--amber) 40%,transparent)}
-.rbtn .n{font-family:var(--f-display);font-size:21px;font-weight:700;display:flex;justify-content:space-between;gap:8px}
-.rbtn .n span{color:var(--amber)}
-.rbtn .x{font-size:13px;color:var(--muted)}
-.rbtn .tag{align-self:flex-start;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;border-radius:4px;background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--ink)}
-.rbtn.wide{grid-column:1/-1}
-@media (max-width:520px){.radar{grid-template-columns:1fr}}
 .note{font-size:13px;color:var(--muted);margin:0}
 
 /* Outlook */
@@ -284,48 +274,6 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
       <div class="legend"><span><i style="background:var(--rain)"></i>Rain</span><span><i style="background:var(--snow)"></i>Snow</span><span><i style="background:var(--ice)"></i>Freezing / mix</span><span><i style="background:var(--freeze);height:2px"></i>0 °C line</span></div>
     </div>
     <div class="scroller" id="hourly"><div class="empty" style="border:0">The hourly strip fills in when the forecast loads. Swipe sideways to see two days ahead.</div></div>
-  </section>
-
-  <section class="sec">
-    <div class="sec-head"><h2>More radar &amp; maps</h2></div>
-    <div class="radar">
-      <a class="rbtn wide" href="https://zoom.earth/maps/precipitation/#view=45.6804,-74.6551,8z" target="_blank" rel="noopener">
-        <span class="tag">Past + up to 7 days ahead</span>
-        <span class="n">Zoom Earth precipitation <span>↗</span></span>
-        <span class="x">Pinch-zoom map with a timeline slider. Drag forward hour by hour to watch bands move in. Opens on Grenville.</span>
-      </a>
-      <a class="rbtn" href="https://www.windy.com/-Weather-radar-radar?radar,45.6804,-74.6551,9" target="_blank" rel="noopener">
-        <span class="tag">Live radar</span>
-        <span class="n">Windy radar <span>↗</span></span>
-        <span class="x">Zoomable live radar loop. Switch the layer to Rain/Snow to scrub the forecast days ahead.</span>
-      </a>
-      <a class="rbtn" href="https://www.windy.com/-Snow-accumulation-snowAccu?snowAccu,45.6804,-74.6551,8" target="_blank" rel="noopener">
-        <span class="tag">Accumulation</span>
-        <span class="n">Windy new snow <span>↗</span></span>
-        <span class="x">Forecast snow totals on a zoomable map, by time window.</span>
-      </a>
-      <a class="rbtn" href="https://www.pivotalweather.com/model.php?m=hrdps&amp;p=prateptype_cat-imp&amp;r=ne" target="_blank" rel="noopener">
-        <span class="tag">Rain vs snow vs ice · 48 h</span>
-        <span class="n">HRDPS precip type <span>↗</span></span>
-        <span class="x">Canada's high-res model as simulated radar, hour by hour. Pink = freezing rain, the one to watch.</span>
-      </a>
-      <a class="rbtn" href="https://www.rainviewer.com/map.html?loc=45.6804,-74.6551,9&amp;layer=radar" target="_blank" rel="noopener">
-        <span class="tag">Last 2 h + nowcast</span>
-        <span class="n">RainViewer <span>↗</span></span>
-        <span class="x">Fast, smooth radar loop with snow coloured separately. Good for the next 30 minutes.</span>
-      </a>
-      <a class="rbtn" href="https://weather.gc.ca/radar/index_e.html?id=CASBV" target="_blank" rel="noopener">
-        <span class="tag">Official · Blainville</span>
-        <span class="n">EC radar east <span>↗</span></span>
-        <span class="x">Environment Canada's Montréal-area radar. Set "Precipitation type" to see snow vs rain.</span>
-      </a>
-      <a class="rbtn" href="https://weather.gc.ca/radar/index_e.html?id=CASFT" target="_blank" rel="noopener">
-        <span class="tag">Official · Franktown</span>
-        <span class="n">EC radar west <span>↗</span></span>
-        <span class="x">Ottawa-area radar. Storms reaching Grenville usually show here first.</span>
-      </a>
-    </div>
-    <p class="note">These open full screen in your browser, centred on your spot.</p>
   </section>
 
   <section class="sec">
