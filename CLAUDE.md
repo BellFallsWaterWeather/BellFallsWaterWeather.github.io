@@ -13,7 +13,11 @@ Differences between the copies are only the wrapper: `index.html` is a full docu
 
 The live radar map (Leaflet + Environment Canada GeoMet WMS RADAR_1KM_RRAI / RADAR_1KM_RSNO, 2-hour loop, no key) and the forecast maps (Windy embed: rain, ptype, snowAccu) only run on github.io; the Claude artifact's sandbox blocks map tiles and iframes, so there the radar box shows a link to the GitHub site instead.
 
-## Hourly forecast refresh
+## Live forecast (every 10 minutes)
+
+On page load and every 10 minutes (and when the page comes back into view), the page fetches a live forecast straight from Open-Meteo (`models=gem_seamless`, Environment Canada GEM) for the location and converts it to the same data shape. The Claude artifact's sandbox blocks that fetch, so it always shows the saved copy.
+
+## Hourly forecast refresh (backup copy)
 
 A Claude scheduled task ("Grenville weather refresh", hourly) fetches MET Norway Locationforecast for the location and replaces ONLY the JSON inside `<script type="application/json" id="fc">…</script>` in both copies, then pushes/publishes.
 
