@@ -227,9 +227,7 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
     <div class="sec-head"><h2>Radar</h2></div>
     <div class="tabs" role="tablist" aria-label="Radar views">
       <button class="tab" role="tab" aria-selected="true" data-view="radar">Radar · live</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="rain">Forecast · next days</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="ptype">Rain / snow / ice</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="snowAccu">Snow totals</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="rain">Rain &amp; snow forecast</button>
     </div>
     <div class="mapbox">
       <iframe id="wframe" title="Radar map centred on 510 Chemin Kilmar" allow="fullscreen"></iframe>
@@ -633,9 +631,7 @@ function windy(view){
   return "https://embed.windy.com/embed2.html?"+p.toString();
 }
 const HELP={radar:"Live radar for the last few hours. Press play at the bottom of the map to loop it, and pinch to zoom. The marker is your spot on Chemin Kilmar.",
-  rain:"Drag the timeline at the bottom to step hour by hour, days ahead. Pinch to zoom.",
-  ptype:"Precipitation type by hour: watch for freezing rain and ice pellets crossing the area.",
-  snowAccu:"Forecast new snow totals. Use the timeline to change the time window."};
+  rain:"Forecast rain and snow. Drag the timeline at the bottom to step hour by hour, days ahead. Pinch to zoom."};
 function open(view){
   tabs.forEach(t=>t.setAttribute("aria-selected",t.dataset.view===view?"true":"false"));
   help.textContent=HELP[view];
