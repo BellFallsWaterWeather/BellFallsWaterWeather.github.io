@@ -62,7 +62,7 @@ header .sub{color:var(--muted);font-size:13px}
 .fresh .src{grid-column:1}
 .fresh .refresh{grid-column:2;grid-row:1/span 2}
 .fresh .src{font-size:11px}
-.refresh{font:600 20px/1 var(--f-body);width:40px;height:40px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.refresh{font:600 14px var(--f-body);padding:9px 12px;white-space:nowrap;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
 .refresh:disabled{opacity:.5}
 .refresh:focus-visible{outline:3px solid color-mix(in srgb,var(--amber) 60%,transparent)}
 .livedot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:5px;vertical-align:1px}
@@ -218,7 +218,7 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
     <div class="fresh" id="fresh">
       <div id="fresh-t">Loading forecast…</div>
       <div class="src" id="fresh-s"></div>
-      <button class="refresh" id="refresh" type="button" aria-label="Refresh now">↻</button>
+      <button class="refresh" id="refresh" type="button">↻ Refresh now</button>
     </div>
   </header>
 
