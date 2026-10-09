@@ -11,7 +11,7 @@ Winter road weather page for a snow plow driver, centred on 510 Chemin Kilmar, G
 
 Differences between the copies are only the wrapper: `index.html` is a full document (doctype, `<head>` with viewport, home-screen metas and a small script that reloads the page after 15 minutes, but only when nobody has touched it for 5 minutes or when it comes back into view); the artifact is the same page body without that skeleton.
 
-The live radar map (Leaflet + Environment Canada GeoMet WMS RADAR_1KM_RRAI / RADAR_1KM_RSNO, 2-hour loop, no key) and the forecast maps (Windy embed: rain, ptype, snowAccu) only run on github.io; the Claude artifact's sandbox blocks map tiles and iframes, so there the radar box shows a link to the GitHub site instead.
+All four radar/forecast map tabs are Windy embeds (overlay radar with product radar; rain, ptype, snowAccu with product ecmwf) only run on github.io; the Claude artifact's sandbox blocks map tiles and iframes, so there the radar box shows a link to the GitHub site instead.
 
 ## Live forecast (every 10 minutes)
 

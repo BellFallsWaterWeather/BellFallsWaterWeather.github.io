@@ -20,8 +20,6 @@ setInterval(function(){if(due()&&Date.now()-touch>5*60e3)location.reload()},60e3
 <title>BellFallsWaterWeather</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 /* Layout: one narrow column built for a phone in a truck cab — road call first, then now, hourly strip, radar, outlook */
 :root{
@@ -175,19 +173,9 @@ header .sub{color:var(--muted);font-size:13px}
 .tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .tab:focus-visible{outline:3px solid color-mix(in srgb,var(--amber) 60%,transparent);outline-offset:2px}
 .mapbox{position:relative;height:420px;max-height:62vh;min-height:300px;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--panel)}
-#map,#wframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+#wframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .mapmsg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;text-align:center;color:var(--muted);background:var(--panel)}
 .mapmsg a{font-weight:600;color:var(--ink)}
-.player{display:flex;align-items:center;gap:10px}
-.player[hidden]{display:none!important}
-.pbtn{flex:0 0 auto;width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:16px;cursor:pointer}
-.pbtn:focus-visible{outline:3px solid color-mix(in srgb,var(--amber) 60%,transparent)}
-.pbtn.wide{width:auto;padding:0 12px;font:600 14px var(--f-body)}
-#scrub{flex:1;min-width:0;accent-color:var(--amber)}
-.ptime{flex:0 0 auto;min-width:84px;text-align:right;font-weight:600}
-.leaflet-container{background:var(--panel);font-family:var(--f-body)}
-.basemap{filter:saturate(.55) contrast(.95)}
-.basemap.dark{filter:invert(1) hue-rotate(180deg) brightness(.85) saturate(.5)}
 
 .empty{padding:28px 16px;text-align:center;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:12px}
 footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
@@ -236,26 +224,18 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
   </section>
 
   <section class="sec" id="radar">
-    <div class="sec-head"><h2>Radar</h2><span class="note" id="rad-note"></span></div>
+    <div class="sec-head"><h2>Radar</h2></div>
     <div class="tabs" role="tablist" aria-label="Radar views">
-      <button class="tab" role="tab" aria-selected="true" data-view="loop" id="tab-loop">Radar · last 2 h</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="rain" id="tab-rain">Forecast · next days</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="ptype" id="tab-ptype">Rain / snow / ice</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="snowAccu" id="tab-snow">Snow totals</button>
+      <button class="tab" role="tab" aria-selected="true" data-view="radar">Radar · live</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="rain">Forecast · next days</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="ptype">Rain / snow / ice</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="snowAccu">Snow totals</button>
     </div>
     <div class="mapbox">
-      <div id="map" aria-label="Radar map centred on 510 Chemin Kilmar"></div>
-      <iframe id="wframe" title="Forecast precipitation map" hidden loading="lazy"></iframe>
+      <iframe id="wframe" title="Radar map centred on 510 Chemin Kilmar" allow="fullscreen"></iframe>
       <div class="mapmsg" id="mapmsg" hidden></div>
     </div>
-    <div class="player" id="player">
-      <button class="pbtn" id="play" aria-label="Pause">❚❚</button>
-      <input type="range" id="scrub" min="0" max="0" value="0" aria-label="Radar frame">
-      <span class="ptime num" id="ptime">—</span>
-      <button class="pbtn wide" id="ptype">Rain</button>
-      <button class="pbtn" id="recentre" aria-label="Recentre on 510 Chemin Kilmar">◎</button>
-    </div>
-    <p class="note" id="rad-help">Pinch to zoom. Environment Canada radar, updated every 6 minutes. Tap Rain or Snow to switch the colour scale. The dot is your spot on Chemin Kilmar.</p>
+    <p class="note" id="rad-help">Live radar for the last few hours. Press play at the bottom of the map to loop it, and pinch to zoom. The marker is your spot on Chemin Kilmar.</p>
   </section>
 
   <section class="sec">
@@ -634,93 +614,37 @@ const rb=$("refresh"); if(rb) rb.addEventListener("click",refreshAll);
 </script>
 <script>
 (function(){
-const LAT=45.6804, LON=-74.6551, Z=8;
+const LAT=45.6804, LON=-74.6551;
 const $=id=>document.getElementById(id);
-const box=$("map"), wf=$("wframe"), msg=$("mapmsg"), player=$("player"), help=$("rad-help");
-const live=/github\.io$/.test(location.hostname) || location.protocol==="file:";
+const wf=$("wframe"), msg=$("mapmsg"), help=$("rad-help");
 const tabs=[...document.querySelectorAll("#radar .tab")];
-
-if(!live || typeof L==="undefined"){
-  box.hidden=true; player.hidden=true; help.hidden=true; msg.hidden=false;
+const live=/github\.io$/.test(location.hostname);
+if(!live){
+  wf.hidden=true; help.hidden=true; msg.hidden=false;
   msg.innerHTML='Live radar maps show on the full app.<a href="https://bellfallswaterweather.github.io/#radar" target="_blank" rel="noopener">Open bellfallswaterweather.github.io ↗</a>';
   tabs.forEach(t=>t.disabled=true);
   return;
 }
-
-// ---- Radar loop (RainViewer, last 2 h) ----
-const dark=matchMedia("(prefers-color-scheme: dark)").matches && document.documentElement.dataset.theme!=="light";
-const map=L.map(box,{zoomControl:true,attributionControl:true,maxZoom:12,minZoom:4}).setView([LAT,LON],Z);
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:12,className:dark?"basemap dark":"basemap",attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
-L.circleMarker([LAT,LON],{radius:7,color:"#fff",weight:2,fillColor:"#ffb81c",fillOpacity:1,pane:"markerPane"}).addTo(map).bindTooltip("510 Chemin Kilmar",{permanent:false});
-
-let frames=[],layers=[],idx=0,timer=null,playing=true;
-const fmt=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Toronto",hour:"numeric",minute:"2-digit"});
-function showFrame(i){
-  if(!layers.length) return;
-  layers[idx]&&layers[idx].setOpacity(0);
-  idx=(i+layers.length)%layers.length;
-  layers[idx].setOpacity(.75);
-  $("scrub").value=idx;
-  const t=frames[idx], ago=Math.round((Date.now()-t)/60000);
-  $("ptime").textContent=(idx===layers.length-1?"Latest ":"")+fmt.format(t)+(ago>0&&idx!==layers.length-1?` · −${ago}m`:"");
-}
-function tick(){ showFrame(idx===layers.length-1?0:idx+1); timer=setTimeout(tick, idx===layers.length-1?1800:550); }
-function setPlay(p){playing=p;$("play").textContent=p?"❚❚":"▶";$("play").setAttribute("aria-label",p?"Pause":"Play");clearTimeout(timer);if(p)timer=setTimeout(tick,550);}
-// Environment Canada GeoMet radar (no key): 1 km composite, frames every 6 min
-const GEOMET="https://geo.weather.gc.ca/geomet";
-const NFRAMES=20; // 2 hours
-let rlayer=(window.__nowTemp!=null&&window.__nowTemp<=1)?"RADAR_1KM_RSNO":"RADAR_1KM_RRAI";
-function setTypeLabel(){$("ptype").textContent=rlayer==="RADAR_1KM_RSNO"?"Snow":"Rain";$("ptype").setAttribute("aria-label","Radar scale: "+(rlayer==="RADAR_1KM_RSNO"?"snow (cm/h)":"rain (mm/h)")+". Tap to switch.");}
-async function frameTimes(){
-  try{
-    const r=await fetch(`${GEOMET}?service=WMS&version=1.3.0&request=GetCapabilities&layer=${rlayer}`,{cache:"no-store"});
-    const x=new DOMParser().parseFromString(await r.text(),"text/xml");
-    const dim=[...x.getElementsByTagName("Dimension")].find(d=>d.getAttribute("name")==="time");
-    const [a,b,step]=dim.textContent.trim().split("/");
-    const m=/PT(\d+)M/.exec(step), stepMs=(m?+m[1]:6)*6e4, end=new Date(b).getTime(), start=new Date(a).getTime();
-    const out=[]; for(let t=end;t>=start&&out.length<NFRAMES;t-=stepMs) out.unshift(new Date(t));
-    if(out.length) return out;
-  }catch(e){}
-  // fallback: assume 6-minute steps, latest frame ~12 min old
-  const step=6*6e4, end=Math.floor((Date.now()-12*6e4)/step)*step, out=[];
-  for(let i=NFRAMES-1;i>=0;i--) out.push(new Date(end-i*step));
-  return out;
-}
-const iso=d=>d.toISOString().replace(/\.\d{3}Z$/,"Z");
-async function loadFrames(){
-  try{
-    const times=await frameTimes();
-    layers.forEach(l=>map.removeLayer(l));
-    frames=times;
-    layers=times.map(t=>L.tileLayer.wms(GEOMET,{layers:rlayer,format:"image/png",transparent:true,version:"1.3.0",time:iso(t),opacity:0,zIndex:5,tileSize:512,zoomOffset:-1,attribution:'Radar © <a href="https://eccc-msc.github.io/open-data/">Environment Canada</a>'}).addTo(map));
-    $("scrub").max=layers.length-1;
-    idx=layers.length-1; showFrame(idx);
-    if(playing) setPlay(true);
-    $("rad-note").textContent="";
-  }catch(e){ $("rad-note").textContent="Radar loop unavailable right now"; }
-}
-setTypeLabel();
-$("ptype").onclick=()=>{rlayer=rlayer==="RADAR_1KM_RSNO"?"RADAR_1KM_RRAI":"RADAR_1KM_RSNO";setTypeLabel();loadFrames();};
-loadFrames(); setInterval(loadFrames,10*60*1000);
-$("play").onclick=()=>setPlay(!playing);
-$("scrub").oninput=e=>{setPlay(false);showFrame(+e.target.value);};
-$("recentre").onclick=()=>{ if(!wf.hidden){ wf.src=wf.src; } else map.setView([LAT,LON],Z); };
-
-// ---- Forecast maps (Windy embed with timeline) ----
-function windy(overlay){
-  const p=new URLSearchParams({lat:LAT,lon:LON,detailLat:LAT,detailLon:LON,width:650,height:420,zoom:Z,level:"surface",overlay,product:"ecmwf",menu:"",message:"true",marker:"true",calendar:"now",pressure:"",type:"map",location:"coordinates",detail:"",metricWind:"km/h",metricTemp:"°C",radarRange:"-1"});
+function windy(view){
+  const radar=view==="radar";
+  const p=new URLSearchParams({lat:LAT,lon:LON,detailLat:LAT,detailLon:LON,width:650,height:420,zoom:radar?9:8,level:"surface",
+    overlay:view,product:radar?"radar":"ecmwf",menu:"",message:"true",marker:"true",calendar:"now",pressure:"",type:"map",location:"coordinates",
+    detail:"",metricWind:"km/h",metricTemp:"°C",radarRange:"-1"});
   return "https://embed.windy.com/embed2.html?"+p.toString();
 }
-const HELP={loop:"Pinch to zoom. Environment Canada radar, updated every 6 minutes. Tap Rain or Snow to switch the colour scale. The dot is your spot on Chemin Kilmar.",
+const HELP={radar:"Live radar for the last few hours. Press play at the bottom of the map to loop it, and pinch to zoom. The marker is your spot on Chemin Kilmar.",
   rain:"Drag the timeline at the bottom to step hour by hour, days ahead. Pinch to zoom.",
   ptype:"Precipitation type by hour: watch for freezing rain and ice pellets crossing the area.",
   snowAccu:"Forecast new snow totals. Use the timeline to change the time window."};
-tabs.forEach(t=>t.addEventListener("click",()=>{
-  tabs.forEach(x=>x.setAttribute("aria-selected",x===t?"true":"false"));
-  const v=t.dataset.view; help.textContent=HELP[v];
-  if(v==="loop"){ wf.hidden=true; box.style.visibility=""; player.hidden=false; map.invalidateSize(); setPlay(true); }
-  else{ setPlay(false); player.hidden=true; box.style.visibility="hidden"; const u=windy(v); if(wf.dataset.v!==v){wf.src=u;wf.dataset.v=v;} wf.hidden=false; }
-}));
+function open(view){
+  tabs.forEach(t=>t.setAttribute("aria-selected",t.dataset.view===view?"true":"false"));
+  help.textContent=HELP[view];
+  if(wf.dataset.v!==view){wf.src=windy(view);wf.dataset.v=view;}
+}
+tabs.forEach(t=>t.addEventListener("click",()=>open(t.dataset.view)));
+open("radar");
+// reload the live radar every 10 minutes while it is the open tab
+setInterval(()=>{ if(wf.dataset.v==="radar"&&document.visibilityState==="visible"){ wf.src=windy("radar"); } },10*60*1000);
 })();
 </script>
 
