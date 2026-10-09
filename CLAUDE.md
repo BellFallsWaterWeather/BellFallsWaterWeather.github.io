@@ -17,6 +17,8 @@ The live radar map (Leaflet + Environment Canada GeoMet WMS RADAR_1KM_RRAI / RAD
 
 On page load and every 10 minutes (and when the page comes back into view), the page fetches a live forecast straight from Open-Meteo (`models=gem_seamless`, Environment Canada GEM) for the location and converts it to the same data shape. The Claude artifact's sandbox blocks that fetch, so it always shows the saved copy.
 
+Official Environment Canada alerts are fetched the same way (api.weather.gc.ca weather-alerts, bbox around the spot) and shown above the road call.
+
 ## Hourly forecast refresh (backup copy)
 
 A Claude scheduled task ("Grenville weather refresh", hourly) fetches MET Norway Locationforecast for the location and replaces ONLY the JSON inside `<script type="application/json" id="fc">…</script>` in both copies, then pushes/publishes.
