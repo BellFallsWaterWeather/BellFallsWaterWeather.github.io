@@ -142,7 +142,6 @@ header .sub{color:var(--muted);font-size:13px}
 .drow .dt{font-family:var(--f-display);font-size:19px;font-weight:600;text-align:right;white-space:nowrap}
 .drow .dt small{color:var(--muted);font-size:15px;font-weight:500}
 
-@media (max-width:520px){
 /* Next 24 h periods */
 .summary{margin:0;font-size:16px;font-weight:500;max-width:65ch}
 .strip-wrap{display:flex;flex-direction:column;gap:4px}
@@ -649,12 +648,24 @@ const $=id=>document.getElementById(id);
 const wf=$("wframe"), box=$("rmap"), msg=$("mapmsg"), help=$("rad-help"), player=$("player"), badge=$("rbadge");
 const tabs=[...document.querySelectorAll("#radar .tab")];
 const live=/github\.io$/.test(location.hostname);
-if(!live || typeof L==="undefined"){
-  box.hidden=true; player.hidden=true; help.hidden=true; msg.hidden=false;
-  msg.innerHTML='Live radar shows on the full app.<a href="https://bellfallswaterweather.github.io/#radar" target="_blank" rel="noopener">Open bellfallswaterweather.github.io ↗</a>';
-  tabs.forEach(t=>t.disabled=true);
+let radar=null;
+function fail(html){ box.hidden=true; player.hidden=true; badge.hidden=true; msg.hidden=false; msg.innerHTML=html; }
+if(!live){
+  fail('Live radar shows on the full app.<a href="https://bellfallswaterweather.github.io/#radar" target="_blank" rel="noopener">Open bellfallswaterweather.github.io ↗</a>');
+  help.hidden=true; tabs.forEach(t=>t.disabled=true);
   return;
 }
+// the map library can be blocked by some browser extensions: try a second source before giving up
+function withLeaflet(cb){
+  if(typeof L!=="undefined") return cb();
+  const css=document.createElement("link"); css.rel="stylesheet"; css.href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"; document.head.appendChild(css);
+  const js=document.createElement("script"); js.src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js";
+  js.onload=cb;
+  js.onerror=()=>fail('The radar map couldn\'t load in this browser.<span>A browser extension such as an ad blocker may be blocking it. Allow bellfallswaterweather.github.io in the extension, then reload.</span>');
+  document.head.appendChild(js);
+}
+withLeaflet(start);
+function start(){
 
 /* ---- base map: light grey canvas (Esri), OSM as fallback ---- */
 const dark=matchMedia("(prefers-color-scheme: dark)").matches && document.documentElement.dataset.theme!=="light";
@@ -716,6 +727,9 @@ $("play").onclick=()=>setPlay(!playing);
 $("scrub").oninput=e=>{setPlay(false);show(+e.target.value);};
 $("ptype").onclick=()=>{layer=layer==="RADAR_1KM_RSNO"?"RADAR_1KM_RRAI":"RADAR_1KM_RSNO";syncType();load();};
 $("recentre").onclick=()=>map.setView([LAT,LON],Z);
+radar={pause:()=>setPlay(false),resume:()=>{map.invalidateSize();setPlay(true);}};
+
+}
 
 /* ---- forecast tab: Windy, rain & snow ---- */
 function windy(){
@@ -729,8 +743,8 @@ tabs.forEach(t=>t.addEventListener("click",()=>{
   const v=t.dataset.view;
   tabs.forEach(x=>x.setAttribute("aria-selected",x===t?"true":"false"));
   help.textContent=HELP[v];
-  if(v==="radar"){ wf.hidden=true; box.style.visibility=""; badge.hidden=false; player.hidden=false; map.invalidateSize(); setPlay(true); }
-  else{ setPlay(false); player.hidden=true; badge.hidden=true; box.style.visibility="hidden"; if(!wf.src) wf.src=windy(); wf.hidden=false; }
+  if(v==="radar"){ wf.hidden=true; if(radar){ box.style.visibility=""; badge.hidden=false; player.hidden=false; radar.resume(); } else msg.hidden=false; }
+  else{ if(radar){ radar.pause(); } player.hidden=true; badge.hidden=true; msg.hidden=true; box.style.visibility="hidden"; if(!wf.src) wf.src=windy(); wf.hidden=false; }
 }));
 })();
 </script>
