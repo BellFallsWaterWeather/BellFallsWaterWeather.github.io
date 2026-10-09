@@ -1,6 +1,6 @@
 # BellFallsWaterWeather
 
-Winter road weather page for a snow plow driver, centred on 510 Chemin Kilmar, Grenville-sur-la-Rouge, QC (lat 45.6804, lon -74.6551).
+Winter road weather page for a snow plow driver, centred on Hydro Hill (510 Chemin Kilmar), Grenville-sur-la-Rouge; the page calls the spot "Hydro Hill", QC (lat 45.6804, lon -74.6551).
 
 ## Two copies, always kept in sync
 
