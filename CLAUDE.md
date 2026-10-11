@@ -21,7 +21,7 @@ Official Environment Canada alerts are fetched the same way (api.weather.gc.ca w
 
 ## Hourly forecast refresh (backup copy)
 
-A Claude scheduled task ("Grenville weather refresh", hourly) fetches MET Norway Locationforecast for the location and replaces ONLY the JSON inside `<script type="application/json" id="fc">…</script>` in both copies, then pushes/publishes.
+A Claude scheduled task ("Grenville weather refresh", hourly) fetches MET Norway Locationforecast for the location and replaces ONLY the JSON inside `<script type="application/json" id="fc">…</script>` in the Claude artifact. It does not push to GitHub: scheduled runs could not push here, and the GitHub site fetches live data itself. The saved block in index.html is refreshed whenever the page is edited in a regular session.
 
 When editing the page, keep exactly one `id="fc"` JSON block and keep its data shape:
 `{updatedAt, modelUpdatedAt, source, lat, lon, hours:[{t,temp,wind(m/s),dir,rh,cloud,sym,mm}], blocks:[{t,temp,wind,sym,mm}]}`.
